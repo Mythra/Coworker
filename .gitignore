@@ -1,0 +1,15 @@
+/target/
+/.idea/
+/*.iml
+
+/bench/coworker-perf-timings.csv
+/bench/jesque-perf-timings.csv
+/bench/combined-perf-timings.csv
+
+/bench/coworker/*.iml
+/bench/coworker/.idea/
+/bench/coworker/target/
+
+/bench/jesque/*.iml
+/bench/jesque/.idea/
+/bench/jesque/target/
