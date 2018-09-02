@@ -37,6 +37,49 @@ is built into [Consul][consul] service checks. Although there is nothing unique
 to consul being used here per say, other architectures are not supported due to
 familiarity. If you'd like to see something like zookeeper support please file a PR!
 
+## Setup ##
+
+Setting up coworker is similar to other Java dependencies. The only thing to be warry
+of is Migrations. Coworker leaves the job of creating the SQL tables up to the user so
+they can use whichever sort of framework/deployment method they want for migrations.
+
+You can find all migrations in our `src/main/resources/migrations/` folder. The naming
+of migrations is as follows: `MigrationVersion_MigrationName_DatabaseType`. So you
+should be able to identify which migrations should be applied in which order, and
+what database they're for.
+
+Currently Coworker distributes itself through the JITPACK repos for maven/gradle.
+Although we plan to one day be on maven-central. Until then simply add the JITPACK
+repo:
+
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+```
+
+And then add the dependency to coworker:
+
+```xml
+<dependency>
+    <groupId>com.github.SecurityInsanity</groupId>
+    <artifactId>Coworker</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+## Writing Jobs ##
+
+There are some basic example jobs in: `bench/coworker/`. Specifically we have
+three job types:
+
+  * EmptyJob - Just exits the job right away. Minimal piece of code.
+  * EchoJob - Echos to the console, and then exits.
+  * RemoteJob - Makes an https call to google, waits a minute, and then finishes.
+
 ## Benchmarks ##
 
 _NOTE: Bencmarks were done on the following scenarios:_
@@ -94,40 +137,6 @@ the two biggest benefits you get from using Coworker will be:
 If this two cases do not fit you Coworker may still be faster than your delayed work
 runner currently. That is if you're using SQL as the backing store, or an unoptimized
 redis store.
-
-## Setup ##
-
-Setting up coworker is similar to other Java dependencies. The only thing to be warry
-of is Migrations. Coworker leaves the job of creating the SQL tables up to the user so
-they can use whichever sort of framework/deployment method they want for migrations.
-
-You can find all migrations in our `src/main/resources/migrations/` folder. The naming
-of migrations is as follows: `MigrationVersion_MigrationName_DatabaseType`. So you
-should be able to identify which migrations should be applied in which order, and
-what database they're for.
-
-Currently Coworker distributes itself through the JITPACK repos for maven/gradle.
-Although we plan to one day be on maven-central. Until then simply add the JITPACK
-repo:
-
-```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-```
-
-And then add the dependency to coworker:
-
-```xml
-<dependency>
-    <groupId>com.github.SecurityInsanity</groupId>
-    <artifactId>Coworker</artifactId>
-    <version>1.0.0</version>
-</dependency>
-```
 
 [instructure_jobs]: https://github.com/instructure/inst-jobs
 [consul]: https://www.consul.io/

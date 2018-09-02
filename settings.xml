@@ -15,5 +15,14 @@
                 </repository>
             </repositories>
         </profile>
+        <profile>
+            <id>ossrh</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <gpg.executable>gpg2</gpg.executable>
+            </properties>
+        </profile>
     </profiles>
 </settings>

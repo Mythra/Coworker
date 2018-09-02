@@ -2,6 +2,9 @@ package io.kungfury.coworker;
 
 import java.time.Instant;
 
+/**
+ * A class that wraps must of the "boilerplate" around creating a java job.
+ */
 public abstract class BackgroundJavaWork implements DelayedJavaWork {
     private long _id;
     private int _stage;
@@ -13,9 +16,13 @@ public abstract class BackgroundJavaWork implements DelayedJavaWork {
      * Initialize a BackgroundJavaWork provides an easier wrapper around DelayedJavaWork.
      *
      * @param id
+     *  The ID of this job.
      * @param stage
+     *  The stage of this job.
      * @param strand
+     *  The strand this job is in.
      * @param priority
+     *  The priority of this job.
      */
     public BackgroundJavaWork(long id, int stage, String strand, int priority) {
         this._id = id;

@@ -16,12 +16,21 @@
     <licenses>
         <license>
             <name>MIT</name>
-            <url>https://opensource.org/licenses/MIT</url>
-            <distribution>repo</distribution>
+            <url>http://www.opensource.org/licenses/mit-license.php</url>
         </license>
     </licenses>
 
+    <developers>
+        <developer>
+            <name>Eric Coan</name>
+            <email>ecoan@rust-lang.life</email>
+            <url>https://github.com/SecurityInsanity</url>
+        </developer>
+    </developers>
+
     <scm>
+        <connection>scm:git:git://github.com/SecurityInsanity/Coworker.git</connection>
+        <developerConnection>scm:git:ssh://github.com:SecurityInsanity/Coworker.git</developerConnection>
         <url>https://github.com/SecurityInsanity/Coworker</url>
     </scm>
 
@@ -261,6 +270,21 @@
                         <version>0.21.0</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

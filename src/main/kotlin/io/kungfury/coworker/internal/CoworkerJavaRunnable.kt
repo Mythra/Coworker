@@ -15,7 +15,7 @@ class CoworkerJavaRunnable(
     private val work: DelayedJavaWork
 ) : Runnable {
     override fun run() {
-        // Don't use runBlocking since the job will call it with connectionManager.
+        // Don't use runBlocking since the job will call it with connectionManager java apis.
         work.WorkPart(describedWork.State)
     }
 }

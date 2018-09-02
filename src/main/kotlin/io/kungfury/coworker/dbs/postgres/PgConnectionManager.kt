@@ -32,12 +32,40 @@ class PgConnectionManager : ConnectionManager {
     private val connectionPool: HikariDataSource
     private val timeoutLong: Long?
 
+    /**
+     * A generic java compatible constructor for PgConnectionManager.
+     *
+     * @param configureSource
+     *  A function that takes in a "HikariConfig" object, configures it, and returns a configured HikariConfig.
+     * @param timeout
+     *  An optional timeout in ms. Defaults to 300000L.
+     */
     constructor(configureSource: Function<HikariConfig, HikariConfig>, timeout: Long?) {
         val finalizedConfig = configureSource.apply(HikariConfig())
         connectionPool = HikariDataSource(finalizedConfig)
         timeoutLong = timeout
     }
 
+    /**
+     * A PgConnectionManager constructor built specifically for kotlin.
+     *
+     * @param configureSource
+     *  A block that takes a HikariConfig, configures it, and returns a configured HikariConfig.
+     */
+    constructor(configureSource: (toConfigure: HikariConfig) -> HikariConfig) {
+        val finalizedConfig = configureSource(HikariConfig())
+        connectionPool = HikariDataSource(finalizedConfig)
+        timeoutLong = null
+    }
+
+    /**
+     * A PgConnectionManager constructor built specifically for kotlin with timeout.
+     *
+     * @param configureSource
+     *  A block that takes a HikariConfig, configures it, and returns a configured HikariConfig.
+     * @param timeout
+     *  An optional timeout value.
+     */
     constructor(configureSource: (toConfigure: HikariConfig) -> HikariConfig, timeout: Long?) {
         val finalizedConfig = configureSource(HikariConfig())
         connectionPool = HikariDataSource(finalizedConfig)

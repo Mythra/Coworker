@@ -2,7 +2,6 @@ package io.kungfury.coworker.dbs
 
 /**
  * Marginalia adds comments to the end of SQL Queries in order to denote where they were called from.
- *
  */
 object Marginalia {
     private val map = HashMap<String, String>()

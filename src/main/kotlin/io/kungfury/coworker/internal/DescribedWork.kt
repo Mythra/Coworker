@@ -1,5 +1,8 @@
 package io.kungfury.coworker.internal
 
+/**
+ * A class that shows a serialized piece of work.
+ */
 data class DescribedWork(
     val workUniqueName: String,
     val workId: Long,
