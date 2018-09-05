@@ -48,27 +48,23 @@ of migrations is as follows: `MigrationVersion_MigrationName_DatabaseType`. So y
 should be able to identify which migrations should be applied in which order, and
 what database they're for.
 
-Currently Coworker distributes itself through the JITPACK repos for maven/gradle.
-Although we plan to one day be on maven-central. Until then simply add the JITPACK
-repo:
+Coworker is available in the maven central repositories so you can just add it to your dependencies:
 
-```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-```
 
-And then add the dependency to coworker:
+Maven:
 
 ```xml
 <dependency>
-    <groupId>com.github.SecurityInsanity</groupId>
-    <artifactId>Coworker</artifactId>
-    <version>1.0.0</version>
+  <groupId>io.kungfury</groupId>
+  <artifactId>coworker</artifactId>
+  <version>1.0.0</version>
 </dependency>
+```
+
+Gradle:
+
+```
+compile 'io.kungfury:coworker:1.0.0'
 ```
 
 ## Writing Jobs ##
