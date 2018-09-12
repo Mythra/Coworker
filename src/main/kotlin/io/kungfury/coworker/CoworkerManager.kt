@@ -22,11 +22,10 @@ import java.lang.reflect.Constructor
 import java.sql.Connection
 import java.time.Instant
 import java.time.ZoneOffset
-import java.time.temporal.TemporalAmount
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
-import kotlin.concurrent.thread
 
+import kotlin.concurrent.thread
 import kotlin.reflect.full.primaryConstructor
 
 /**
@@ -45,10 +44,9 @@ import kotlin.reflect.full.primaryConstructor
  */
 class CoworkerManager(
     private val connectionManager: ConnectionManager,
-    private val checkWorkEvery: TemporalAmount,
-    nstrandMap: Map<String, Int>,
     threads: Int,
-    private val serviceChecker: ServiceChecker?
+    private val serviceChecker: ServiceChecker?,
+    private val configurationInput: CoworkerConfigurationInput
 ) {
     private val LOGGER = LoggerFactory.getLogger(CoworkerManager::class.java)
 
@@ -58,16 +56,12 @@ class CoworkerManager(
     private val futureWorkMap = HashMap<Int, Long>()
 
     // Ensure we start off checking old work.
-    private var lastCheckedWork: Instant = Instant.now().minusSeconds(10).minus(checkWorkEvery)
+    private var lastCheckedWork: Instant = Instant.now().minusSeconds(10).minus(configurationInput.getWorkCheckDelay())
     private var nextCalculatedCheck: Long = Instant.now().epochSecond
     private val workNotifiedAbout = ArrayList<WorkNotification>()
 
     private var listened: ReceiveChannel<String> = connectionManager.listenToChannel("workers")
     private val networkAddr: String = NetworkUtils.getLocalHostLANAddress().hostAddress
-
-    private val nstrand: Map<String, Pair<Regex, Int>> = nstrandMap.map { entry ->
-        entry.key to Pair(Regex.fromLiteral(entry.key), entry.value)
-    }.toMap()
 
     // The parameter size used for calling constructors.
     private val PARAMETER_SIZE = 5
@@ -295,7 +289,7 @@ class CoworkerManager(
                         }
                     }
                 }
-                nextCalculatedCheck = thisInstant.plus(checkWorkEvery).epochSecond
+                nextCalculatedCheck = thisInstant.plus(configurationInput.getWorkCheckDelay()).epochSecond
                 lastCheckedWork = thisInstant
             } catch (exc: Exception) {
                 LOGGER.error("Failed to check for orphaned work: [ $exc ].")
@@ -412,17 +406,21 @@ class CoworkerManager(
      */
     @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
     private suspend fun ValidateNStrand(strand: String): Boolean {
+        val nstrand = configurationInput.getNstrandMap()
         if (nstrand.isEmpty()) {
             return false
         }
 
         var maxNStrand = -1
-        for (strandKey in nstrand.keys) {
+        for (strandPair in nstrand.keys) {
+            val strandKey = strandPair.first
+            val strandRegex = strandPair.second
+
             if (strandKey == strand) {
-                maxNStrand = nstrand[strand]!!.second
+                maxNStrand = nstrand[strandPair]!!
                 break
-            } else if (nstrand[strandKey]!!.first.matches(strand)) {
-                maxNStrand = nstrand[strandKey]!!.second
+            } else if (strandRegex.matches(strand)) {
+                maxNStrand = nstrand[strandPair]!!
                 break
             }
         }

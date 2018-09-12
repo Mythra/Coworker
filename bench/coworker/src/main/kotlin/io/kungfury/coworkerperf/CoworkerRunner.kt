@@ -1,6 +1,7 @@
 package io.kungfury.coworkerperf
 
 import io.kungfury.coworker.CoworkerManager
+import io.kungfury.coworker.StaticCoworkerConfigurationInput
 import io.kungfury.coworker.WorkInserter
 import io.kungfury.coworker.dbs.postgres.PgConnectionManager
 
@@ -47,6 +48,6 @@ fun main(arguments: Array<String>) {
         }
     }
     System.out.println("Starting Coworker with: [ $threads ] Threads.")
-    val manager = CoworkerManager(connManager, Duration.parse("PT5M"), HashMap(), threads, null)
+    val manager = CoworkerManager(connManager, threads, null, StaticCoworkerConfigurationInput(Duration.parse("PT5M"), HashMap()))
     manager.Start()
 }

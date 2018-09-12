@@ -58,7 +58,7 @@
 
         <resources>
             <resource>
-                <directory>${project.basedir}/src/io.kungfury.jesqueperf.main/resources</directory>
+                <directory>${project.basedir}/src/main/resources</directory>
             </resource>
         </resources>
 
@@ -78,7 +78,7 @@
                             <artifactId>coworker</artifactId>
                             <version>0.1.0-SNAPSHOT</version>
                             <packaging>jar</packaging>
-                            <file>${project.basedir}/../../target/Coworker-0.1.0-SNAPSHOT.jar</file>
+                            <file>${project.basedir}/../../target/Coworker-1.1.0-SNAPSHOT.jar</file>
                         </configuration>
                     </execution>
                 </executions>

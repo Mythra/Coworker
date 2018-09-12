@@ -1,7 +1,9 @@
 package io.kungfury.coworkerperf;
 
 import com.zaxxer.hikari.HikariConfig;
+
 import io.kungfury.coworker.CoworkerManager;
+import io.kungfury.coworker.StaticCoworkerConfigurationInput;
 import io.kungfury.coworker.dbs.ConnectionManager;
 import io.kungfury.coworker.dbs.postgres.PgConnectionManager;
 
@@ -17,7 +19,8 @@ public class CoworkerJavaRunner {
             hikariConfig.setJdbcUrl(System.getenv("JDBC_URL"));
             return hikariConfig;
         }), 6L);
-        CoworkerManager manager = new CoworkerManager(cm, Duration.parse("PT5M"), new HashMap<>(), threads, null);
+        CoworkerManager manager = new CoworkerManager(cm, threads, null,
+            new StaticCoworkerConfigurationInput(Duration.parse("PT5M"), new HashMap<>()));
         manager.Start();
     }
 }
