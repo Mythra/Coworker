@@ -3,6 +3,7 @@
 * Getting started
 
   * [Quick start](quickstart.md)
+  * [Migrations](migrations.md)
   * [Inserting Work](insert-work.md)
   * [Strands](strands.md)
   * [Using The Service Checker](service-checker.md)

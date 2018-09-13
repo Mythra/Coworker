@@ -11,6 +11,8 @@ to run a minimal version of coworker. However, it should be noted if you do not
 also run [Consul](https://www.consul.io/) then you will ***Not have node failover healing***.
 As we depend on consul in order to tell us if a node has perished or not.
 
+You'll also need to run [Migrations](migrations.md) which have been documented in this repo.
+
 ## Starting up Coworker ##
 
 Although coworker can techincally be started up from anywhere, we recommend distributing
