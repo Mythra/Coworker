@@ -13,3 +13,7 @@
 /bench/jesque/*.iml
 /bench/jesque/.idea/
 /bench/jesque/target/
+
+/e2e/coworker-e2e/*.iml
+/e2e/coworker-e2e/.idea/
+/e2e/coworker-e2e/target/

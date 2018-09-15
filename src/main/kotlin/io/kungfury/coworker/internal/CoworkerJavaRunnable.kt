@@ -16,6 +16,6 @@ class CoworkerJavaRunnable(
 ) : Runnable {
     override fun run() {
         // Don't use runBlocking since the job will call it with connectionManager java apis.
-        work.WorkPart(describedWork.State)
+        work.WorkPart(describedWork.State).run()
     }
 }

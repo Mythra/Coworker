@@ -1,11 +1,17 @@
 package io.kungfury.coworker
 
+import com.jsoniter.output.JsonStream
 import io.kungfury.coworker.dbs.ConnectionManager
 import io.kungfury.coworker.dbs.ConnectionType
 import io.kungfury.coworker.dbs.Marginalia
 import io.kungfury.coworker.dbs.TextSafety
+import io.kungfury.coworker.internal.states.DelayedLambdaState
+import io.kungfury.coworker.internal.states.HandleAsyncFunctorState
 
 import kotlinx.coroutines.experimental.runBlocking
+import java.io.ByteArrayOutputStream
+import java.io.ObjectOutputStream
+import java.io.Serializable
 
 import java.sql.Timestamp
 import java.time.Instant
@@ -63,6 +69,76 @@ object WorkInserter {
                 }
             }
         }
+    }
+
+    fun Any.serializeToBytes(): ByteArray = ByteArrayOutputStream().use {
+        it -> ObjectOutputStream(it).writeObject(this); it
+    }.toByteArray()
+
+    @Throws(IllegalStateException::class)
+    fun HandleAsynchronously(
+        connectionManager: ConnectionManager,
+        functor: (Array<com.jsoniter.any.Any>) -> Unit,
+        parameters: Array<Any>,
+        strand: String = "default",
+        runAt: Instant = Instant.now(),
+        priority: Int = 100
+    ): Long {
+        val jobState: HandleAsyncFunctorState
+        if (!(functor is Serializable)) {
+            throw IllegalStateException("Functor must be serializable.")
+        }
+        val serializedObj = functor.serializeToBytes()
+
+        jobState = HandleAsyncFunctorState()
+        jobState.args = parameters.map {
+            com.jsoniter.any.Any.wrap(it)
+        }.toTypedArray()
+        jobState.isJava = false
+        jobState.methodState = DelayedLambdaState()
+        jobState.methodState.serializedClosure = serializedObj
+        jobState.version = 1
+
+        return InsertWork(
+            connectionManager,
+            "io.kungfury.coworker.internal.AsyncFunctorRunner",
+            JsonStream.serialize(jobState),
+            strand,
+            runAt,
+            priority
+        )
+    }
+
+    @Throws(java.lang.IllegalStateException::class)
+    fun HandleAsynchronouslyJava(
+        connectionManager: ConnectionManager,
+        functor: java.util.function.Function<Array<com.jsoniter.any.Any>, Void>,
+        parameters: Array<com.jsoniter.any.Any>,
+        strand: String = "default",
+        runAt: Instant = Instant.now(),
+        priority: Int = 100
+    ): Long {
+        val jobState: HandleAsyncFunctorState
+        if (!(functor is Serializable)) {
+            throw java.lang.IllegalStateException("Functor is not serializable!")
+        }
+        val serializedObj = functor.serializeToBytes()
+
+        jobState = HandleAsyncFunctorState()
+        jobState.args = parameters
+        jobState.isJava = true
+        jobState.methodState = DelayedLambdaState()
+        jobState.methodState.serializedClosure = serializedObj
+        jobState.version = 1
+
+        return InsertWork(
+            connectionManager,
+            "io.kungfury.coworker.internal.AsyncFunctorRunner",
+            JsonStream.serialize(jobState),
+            strand,
+            runAt,
+            priority
+        )
     }
 
     fun InsertBulkWork(

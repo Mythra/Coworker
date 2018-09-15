@@ -46,3 +46,77 @@ public class Utils {
     }
 }
 ```
+
+## Using Handle Asynchronously ##
+
+Coworker also allows you to insert just raw static functors into the job queue, although
+these can't yield it can be useful when you just want something to happen in the background.
+
+It should be noted that these are not like Kotlin Coroutines, you will not receive the
+value back, the return value of these functions are lost, and as such you shouldn't ever return
+ anything but null from these functions. All arguments are passed as the: `Array<Any>` type from
+ the [jsoniter](https://jsoniter.com/) library (***NOT FROM KOTLIN STDLIB.***) Example
+ Functions are listed below:
+
+ ***Kotlin:***
+
+ ```kotlin
+ import com.jsoniter.any.Any
+
+ import io.kungfury.coworker.WorkInserter
+ import io.kungfury.coworker.dbs.ConnectionManager
+
+ fun MethodReferenceWithArgs(args: Array<Any>) {
+     System.err.println("Method reference: ${args.first().toInt()}")
+ }
+
+fun InsertMyJob(connectionManager: ConnectionManager) {
+  WorkInserter.HandleAsynchronously(connectionManager, { args: Array<Any> ->
+    val value = args.first()
+    System.err.println(value.toInt())
+  }, arrayOf(10))
+  WorkInserter.HandleAsynchronously(connectionManager, ::MethodReferenceWithArgs, arrayOf(10))
+}
+ ```
+
+ ***Java:***
+
+ ```java
+import com.jsoniter.any.Any;
+
+import java.io.Serializable;
+
+public class JavaFunctions implements Serializable {
+    public Void nonEmpty(Any[] args) {
+        int num = args[0].toInt();
+        System.out.println("Num is: " + num);
+        return null;
+    }
+
+    public static void TestQueueJava(ConnectionManager connManager) {
+        WorkInserter.INSTANCE.HandleAsynchronouslyJava(
+          connManager,
+          (Function<Any[], Void> & Serializable) (obj) -> {
+              int num = obj[0].toInt();
+              System.err.println("Num is: " + num);
+              return null;
+          },
+          new Any[] {Any.wrap(10)},
+          "default",
+          Instant.now(),
+          100
+        );
+
+        JavaFunctions jf = new JavaFunctions();
+
+        WorkInserter.INSTANCE.HandleAsynchronouslyJava(
+          connManager,
+          (Function <Any[], Void> & Serializable) jf::nonEmpty,
+          new Any[] {Any.wrap(10)},
+          "default",
+          Instant.now(),
+          100
+        );
+    }
+}
+```

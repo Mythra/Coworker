@@ -57,7 +57,7 @@ class CoworkerManager(
 
     // Ensure we start off checking old work.
     private var lastCheckedWork: Instant = Instant.now().minusSeconds(10).minus(configurationInput.getWorkCheckDelay())
-    private var nextCalculatedCheck: Long = Instant.now().epochSecond
+    private var nextCalculatedCheck: Long = Instant.now().minusSeconds(5).epochSecond
     private val workNotifiedAbout = ArrayList<WorkNotification>()
 
     private var listened: ReceiveChannel<String> = connectionManager.listenToChannel("workers")
@@ -271,7 +271,15 @@ class CoworkerManager(
                                         "AND" +
                                         " id != ANY(?)"
                                 ))
-                                statement.setArray(1, connection.createArrayOf("BIGINT", workNotifiedAbout.toTypedArray()))
+                                val ids = workNotifiedAbout.map { work ->
+                                    work.Id
+                                }.toMutableList()
+                                if (ids.isEmpty()) {
+                                    // POSTGRES needs at least one value otherwise it tries to
+                                    // compare against the empty set, and this results in 0 jobs being returned.
+                                    ids.add(-1)
+                                }
+                                statement.setArray(1, connection.createArrayOf("BIGINT", ids.toTypedArray()))
                                 val rs = statement.executeQuery()
 
                                 while (rs.next()) {
