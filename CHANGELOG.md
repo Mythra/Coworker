@@ -1,4 +1,4 @@
-## 1.1.0 (Unreleased)
+## 1.1.0 (September 14th, 2018)
 
 * Change Input Params to Interface, to allow users to dynamically refresh values.
 * Add documentation site.
