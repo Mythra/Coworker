@@ -1,3 +1,9 @@
+## 1.1.1 (September 17th, 2018)
+
+* Stop distributing shaded jar which causes warnings from mvn compile,
+  and causes intellij to not correctly parse the dependency in certain cases.
+* Bump postgresql version.
+
 ## 1.1.0 (September 14th, 2018)
 
 * Change Input Params to Interface, to allow users to dynamically refresh values.
