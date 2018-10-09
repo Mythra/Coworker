@@ -61,7 +61,7 @@ object WorkInserter {
 
                         connection.createStatement().execute(Marginalia.AddMarginalia(
                             "WorkInserter_Notify",
-                            String.format("NOTIFY workers, '%s'", "$id;$priority;${Instant.now().epochSecond};1;$purifiedStrand")
+                            String.format("NOTIFY workers, '%s'", "$id;$priority;${runAt.epochSecond};1;$purifiedStrand")
                         ))
 
                         id
@@ -171,7 +171,7 @@ object WorkInserter {
 
                             connection.createStatement().execute(Marginalia.AddMarginalia(
                                 "WorkInserter_BulkNotify",
-                                String.format("NOTIFY workers, '%s'", "$id;$priority;${Instant.now().epochSecond};1;$purifiedStrand")
+                                String.format("NOTIFY workers, '%s'", "$id;$priority;${runAt.epochSecond};1;$purifiedStrand")
                             ))
                         }
 

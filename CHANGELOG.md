@@ -1,3 +1,7 @@
+## 1.1.4 (October 9th, 2018)
+
+* Fix runAt notifications.
+
 ## 1.1.1 (September 17th, 2018)
 
 * Stop distributing shaded jar which causes warnings from mvn compile,
