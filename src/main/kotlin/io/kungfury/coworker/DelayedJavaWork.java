@@ -112,7 +112,7 @@ public interface DelayedJavaWork {
                     } catch (SQLException e1) {
                         throw new UncheckedIOException(new IOException(e1.getNextException()));
                     }
-                }));
+                }), true);
         }
     }
 
