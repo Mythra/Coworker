@@ -39,7 +39,7 @@
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <user.name>SecurityInsanity</user.name>
-        <kotlin.version>1.2.70</kotlin.version>
+        <kotlin.version>1.2.71</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     </properties>
 

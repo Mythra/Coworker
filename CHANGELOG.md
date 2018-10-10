@@ -1,3 +1,8 @@
+## 1.1.5 (Unreleased)
+
+* Fix Java `yieldStage`, to actually allow it to commit the transaction.
+* Bump Kotlin to 1.2.71
+
 ## 1.1.4 (October 9th, 2018)
 
 * Fix runAt notifications.
