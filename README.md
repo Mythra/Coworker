@@ -57,14 +57,14 @@ Maven:
 <dependency>
   <groupId>io.kungfury</groupId>
   <artifactId>coworker</artifactId>
-  <version>1.1.4</version>
+  <version>1.1.5</version>
 </dependency>
 ```
 
 Gradle:
 
 ```
-compile 'io.kungfury:coworker:1.1.4'
+compile 'io.kungfury:coworker:1.1.5'
 ```
 
 ## Writing Jobs ##

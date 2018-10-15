@@ -1,4 +1,4 @@
-## 1.1.5 (Unreleased)
+## 1.1.5 (October 14th, 2018)
 
 * Fix Java `yieldStage`, to actually allow it to commit the transaction.
 * Bump Kotlin to 1.2.71

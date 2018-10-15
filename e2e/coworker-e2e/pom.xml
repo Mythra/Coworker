@@ -41,7 +41,7 @@
         <dependency>
             <groupId>io.kungfury</groupId>
             <artifactId>coworker</artifactId>
-            <version>1.1.4</version>
+            <version>1.1.5</version>
         </dependency>
 
         <dependency>
@@ -76,9 +76,9 @@
                         <configuration>
                             <groupId>io.kungfury</groupId>
                             <artifactId>coworker</artifactId>
-                            <version>1.1.4</version>
+                            <version>1.1.5</version>
                             <packaging>jar</packaging>
-                            <file>${project.basedir}/../../target/Coworker-1.1.4.jar</file>
+                            <file>${project.basedir}/../../target/Coworker-1.1.5.jar</file>
                         </configuration>
                     </execution>
                 </executions>
