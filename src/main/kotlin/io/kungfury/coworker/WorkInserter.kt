@@ -1,6 +1,7 @@
 package io.kungfury.coworker
 
 import com.jsoniter.output.JsonStream
+
 import io.kungfury.coworker.dbs.ConnectionManager
 import io.kungfury.coworker.dbs.ConnectionType
 import io.kungfury.coworker.dbs.Marginalia
@@ -8,11 +9,11 @@ import io.kungfury.coworker.dbs.TextSafety
 import io.kungfury.coworker.internal.states.DelayedLambdaState
 import io.kungfury.coworker.internal.states.HandleAsyncFunctorState
 
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.runBlocking
+
 import java.io.ByteArrayOutputStream
 import java.io.ObjectOutputStream
 import java.io.Serializable
-
 import java.sql.Timestamp
 import java.time.Instant
 

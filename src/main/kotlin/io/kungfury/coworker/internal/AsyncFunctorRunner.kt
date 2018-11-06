@@ -16,17 +16,17 @@ class AsyncFunctorRunner(
     strand: String,
     priority: Int
 ) : BackgroundKotlinWork(id, stage, strand, priority) {
-    private var state = ""
+    private var internalState = ""
 
-    override fun serializeState(): String = state
+    override fun serializeState(): String = internalState
 
     inline fun <reified T : Any> ByteArray.deserialize(): T =
         ObjectInputStream(inputStream()).readObject() as T
 
-    override suspend fun Work(stat: String) {
-        state = stat
+    override suspend fun Work(state: String) {
+        internalState = state
         try {
-            val parsed: HandleAsyncFunctorState = JsonIterator.parse(state).read(HandleAsyncFunctorState::class.java)
+            val parsed: HandleAsyncFunctorState = JsonIterator.parse(internalState).read(HandleAsyncFunctorState::class.java)
             val serializedFunctor = parsed.methodState.serializedClosure
 
             if (!parsed.isJava) {
@@ -34,7 +34,8 @@ class AsyncFunctorRunner(
                 func(parsed.args)
             } else {
                 val func: Function<Array<com.jsoniter.any.Any>, Void> = serializedFunctor.deserialize()
-                // If we don't do this we get: `Error: func.apply(parsed.args) must not be null`
+                // If we don't do this we get: `Error: func.apply(parsed.args) must not be null` when a function
+                // returns null
                 var _res: Any? = func.apply(parsed.args)
             }
 

@@ -3,11 +3,13 @@ package io.kungfury.coworker.consul
 import com.jsoniter.JsonIterator
 import com.jsoniter.spi.JsonException
 
-import kotlinx.coroutines.experimental.CoroutineName
-import kotlinx.coroutines.experimental.CoroutineScope
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.withTimeout
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withTimeout
 
 import okhttp3.Call
 import okhttp3.Callback
@@ -20,7 +22,6 @@ import org.slf4j.LoggerFactory
 
 import java.io.IOException
 import java.util.Optional
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -59,8 +60,8 @@ class ServiceChecker(consulUri: String, service: String, consulToken: Optional<S
      * Get a list of the new offline nodes.
      */
     fun getNewOfflineNodes(): Deferred<List<String>> {
-        return async {
-            withTimeout(consulTimeoutMs, TimeUnit.MILLISECONDS) {
+        return GlobalScope.async {
+            withTimeout(consulTimeoutMs) {
                 CoroutineName("getNewOfflineNodes - $consulService")
 
                 val reqBuilder = Request.Builder().url(consulHost).get()

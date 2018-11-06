@@ -1,10 +1,10 @@
 package io.kungfury.coworker.dbs
 
-import kotlinx.coroutines.experimental.TimeoutCancellationException
-import kotlinx.coroutines.experimental.channels.ReceiveChannel
+import kotlinx.coroutines.channels.ReceiveChannel
 
 import java.io.IOException
 import java.sql.Connection
+import java.util.concurrent.TimeoutException
 import java.util.function.Function
 
 /**
@@ -27,7 +27,7 @@ interface ConnectionManager {
      *
      * @param query
      *  A java function that takes a connection, and returns your result.
-     * @throws TimeoutCancellationException
+     * @throws TimeoutException
      *   If we took too long.
      * @throws IOException
      *   If we failed to connect to the database.
@@ -39,7 +39,7 @@ interface ConnectionManager {
      * NOTE: All queries are done in transaction mode. You NEED TO Commit in your query code.
      * NOTE 2: We WILL call rollback if there is an unhandled exception.
      */
-    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
+    @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     fun <T> executeTransaction(query: Function<Connection, T>): T {
         return executeTransaction(query, false)
     }
@@ -51,7 +51,7 @@ interface ConnectionManager {
      *  A Function that takes a connection, and returns your result.
      * @param commitOnExit
      *  Determines if we should commit the transaction on exit.
-     * @throws TimeoutCancellationException
+     * @throws TimeoutException
      *   If we took too long.
      * @throws IOException
      *   If we failed to connect to the database.
@@ -69,7 +69,7 @@ interface ConnectionManager {
      * NOTE 2: We WILL call rollback if any exception is thrown!
      * </p>
      */
-    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
+    @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     fun <T> executeTransaction(query: Function<Connection, T>, commitOnExit: Boolean = false): T
 
     /**
@@ -77,7 +77,7 @@ interface ConnectionManager {
      *
      * @param query
      *  A Function that takes a connection, and returns your result.
-     * @throws TimeoutCancellationException
+     * @throws TimeoutException
      *   If we took too long.
      * @throws IOException
      *   If we failed to connect to the database.
@@ -89,7 +89,7 @@ interface ConnectionManager {
      * NOTE: All queries are done in transaction mode. You NEED TO Commit in your query code.
      * NOTE 2: We WILL call rollback if there is an unhandled exception.
      */
-    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
+    @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     suspend fun <T> executeTransaction(query: suspend (Connection) -> T): T {
         return executeTransaction(query, false)
     }

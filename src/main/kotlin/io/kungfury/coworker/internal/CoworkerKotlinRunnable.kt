@@ -2,8 +2,8 @@ package io.kungfury.coworker.internal
 
 import io.kungfury.coworker.DelayedKotlinWork
 
-import kotlinx.coroutines.experimental.CoroutineName
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.runBlocking
 
 /**
  * ThinWrapper to run an actual piece of work for kotlin.

@@ -6,13 +6,13 @@ import io.kungfury.coworker.dbs.Marginalia
 import io.kungfury.coworker.dbs.Marginalia.AddMarginalia
 import io.kungfury.coworker.utils.NetworkUtils
 
-import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.Job
 
 import java.sql.Connection
 import java.sql.Timestamp
 import java.time.Instant
 
-import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Describes a "Piece of Work" that needs to be worked in the background potentially past the life of one app server.

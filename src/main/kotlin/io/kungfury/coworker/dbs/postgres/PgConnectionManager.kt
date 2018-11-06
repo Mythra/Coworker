@@ -8,12 +8,15 @@ import io.kungfury.coworker.dbs.ConnectionType
 import io.kungfury.coworker.dbs.Marginalia
 import io.kungfury.coworker.dbs.TextSafety
 
-import kotlinx.coroutines.experimental.CoroutineName
-import kotlinx.coroutines.experimental.TimeoutCancellationException
-import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.channels.produce
-import kotlinx.coroutines.experimental.runBlocking
-import kotlinx.coroutines.experimental.withTimeout
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 import org.postgresql.PGConnection
 
@@ -21,7 +24,7 @@ import org.slf4j.LoggerFactory
 
 import java.io.IOException
 import java.sql.Connection
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.function.Function
 
 /**
@@ -76,10 +79,10 @@ class PgConnectionManager : ConnectionManager {
         get() = if (timeoutLong == null) { 300000L } else { timeoutLong }
     override val CONNECTION_TYPE: ConnectionType = ConnectionType.POSTGRES
 
-    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
+    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class)
     override fun <T> executeTransaction(query: Function<Connection, T>, commitOnExit: Boolean): T {
         return runBlocking {
-            withTimeout(TIMEOUT_MS, TimeUnit.MILLISECONDS) {
+            withTimeout(TIMEOUT_MS) {
                 CoroutineName("Coworker - ExecuteTransactionJava")
 
                 var result: T? = null
@@ -105,7 +108,7 @@ class PgConnectionManager : ConnectionManager {
                 }
 
                 if (!isActive) {
-                    throw TimeoutCancellationException("Failed to complete in time!")
+                    throw TimeoutException("Failed to complete in time!")
                 }
 
                 if (error != null) {
@@ -114,16 +117,16 @@ class PgConnectionManager : ConnectionManager {
 
                 if (result == null) {
                     throw IllegalStateException("Result was null at the end of executeTransactionJava")
+                } else {
+                    result
                 }
-
-                result!!
             }
         }
     }
 
-    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
+    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class)
     override suspend fun <T> executeTransaction(query: suspend (Connection) -> T, commitOnExit: Boolean): T {
-        return withTimeout(TIMEOUT_MS, TimeUnit.MILLISECONDS) {
+        return withTimeout(TIMEOUT_MS) {
             CoroutineName("Coworker - ExecuteTransaction")
 
             var result: T? = null
@@ -149,7 +152,7 @@ class PgConnectionManager : ConnectionManager {
             }
 
             if (!isActive) {
-                throw TimeoutCancellationException("Failed to complete in time!")
+                throw TimeoutException("Failed to complete in time!")
             }
 
             if (error != null) {
@@ -158,14 +161,15 @@ class PgConnectionManager : ConnectionManager {
 
             if (result == null) {
                 throw IllegalStateException("Result was null at the end of executeTransaction")
+            } else {
+                result
             }
-
-            result!!
         }
     }
 
+    @UseExperimental(ExperimentalCoroutinesApi::class)
     override fun listenToChannel(channel: String): ReceiveChannel<String> {
-        return produce {
+        return GlobalScope.produce {
             CoroutineName("PostgresListen( $channel )")
             // So all in all this is subpar.
             //

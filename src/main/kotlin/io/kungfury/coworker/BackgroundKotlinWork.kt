@@ -1,11 +1,12 @@
 package io.kungfury.coworker
 
-import kotlinx.coroutines.experimental.Job
-import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 import java.time.Instant
 
-import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.CoroutineContext
 
 /**
  * A Wrapper around DelayedKotlinWork implementing a lot of the boilerplate for you.
@@ -42,7 +43,7 @@ abstract class BackgroundKotlinWork(
     abstract suspend fun Work(state: String)
 
     override fun WorkPart(state: String, coroutineContext: CoroutineContext): Job {
-        return launch(coroutineContext) {
+        return CoroutineScope(coroutineContext).launch {
             Work(state)
         }
     }

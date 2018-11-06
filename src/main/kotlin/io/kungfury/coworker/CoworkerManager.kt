@@ -11,9 +11,9 @@ import io.kungfury.coworker.internal.DescribedWork
 import io.kungfury.coworker.internal.WorkNotification
 import io.kungfury.coworker.utils.NetworkUtils
 
-import kotlinx.coroutines.experimental.TimeoutCancellationException
-import kotlinx.coroutines.experimental.channels.ReceiveChannel
-import kotlinx.coroutines.experimental.runBlocking
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.runBlocking
 
 import org.slf4j.LoggerFactory
 
@@ -24,6 +24,7 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
+import java.util.concurrent.TimeoutException
 
 import kotlin.concurrent.thread
 import kotlin.reflect.full.primaryConstructor
@@ -107,10 +108,7 @@ class CoworkerManager(
             FindHeadlessWork()
 
             while (futures.size < nThreads) {
-                val foundWork = FindAndLockWork()
-                if (foundWork == null) {
-                    break
-                }
+                val foundWork = FindAndLockWork() ?: break
 
                 try {
                     val clazz = Class.forName(foundWork.workUniqueName)
@@ -164,6 +162,9 @@ class CoworkerManager(
                         futures.add(future)
                         futureWorkMap[future.hashCode()] = foundWork.workId
                     }
+                } catch (classNotFound: ClassNotFoundException) {
+                    LOGGER.warn("Failed to find class: [ ${foundWork.workUniqueName} ]! Passing on it, since it might be for a different language.")
+                    workNotifiedAbout.removeIf { it.Id == foundWork.workId }
                 } catch (exc: Exception) {
                     LOGGER.error("Failed to find, and call constructor for: [ ${foundWork.workUniqueName} ] Exception: [ $exc ].")
                     runBlocking { FailWork(foundWork.workId, foundWork.workUniqueName, "${exc.localizedMessage}\n  ${exc.stackTrace.joinToString("\n  ")}") }
@@ -210,6 +211,7 @@ class CoworkerManager(
     /**
      * Processes Notifications that have been received from postgres.
      */
+    @UseExperimental(ExperimentalCoroutinesApi::class)
     private fun ProcessNotifications() {
         try {
             if (listened.isClosedForReceive) {
@@ -361,7 +363,7 @@ class CoworkerManager(
      * @return
      *  Returns a pair of <succesfully_locked, locked_work>.
      */
-    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
+    @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun AttemptLockWork(id: Long): Pair<Boolean, DescribedWork?> {
         LOGGER.info("AttemptLockWork called for $id")
 
@@ -412,7 +414,7 @@ class CoworkerManager(
      * @param checkEquals
      *  Check if the count is currently over, or is just at the max capacity.
      */
-    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
+    @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun ValidateNStrand(strand: String): Boolean {
         val nstrand = configurationInput.getNstrandMap()
         if (nstrand.isEmpty()) {
@@ -453,7 +455,7 @@ class CoworkerManager(
         }
     }
 
-    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
+    @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun ReleaseToPoolForHosts(list: List<String>) {
         LOGGER.info("ReleaseToPoolForHosts called with: [ ${list.joinToString(",")} ].")
 
@@ -479,7 +481,7 @@ class CoworkerManager(
      * @return
      *  If the work was released back into the pool.
      */
-    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
+    @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun ReleaseToPool(id: Long): Boolean {
         LOGGER.info("ReleaseToPool called for $id")
 
@@ -505,7 +507,7 @@ class CoworkerManager(
      * @param id
      *  The ID of the piece of work.
      */
-    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
+    @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun IsWorkLocked(id: Long): Boolean {
         LOGGER.info("IsWorkLocked called for $id")
 
@@ -536,7 +538,7 @@ class CoworkerManager(
      * @param failureReason
      *  The reason the piece of work failed.
      */
-    @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class, Exception::class)
+    @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun FailWork(id: Long, workName: String, failureReason: String) {
         LOGGER.info("FailWork called for $id")
 
