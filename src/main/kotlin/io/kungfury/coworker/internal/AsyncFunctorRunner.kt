@@ -36,9 +36,8 @@ class AsyncFunctorRunner(
                 val func: Function<Array<com.jsoniter.any.Any>, Void> = serializedFunctor.deserialize()
                 // If we don't do this we get: `Error: func.apply(parsed.args) must not be null` when a function
                 // returns null
-                var _res: Any? = func.apply(parsed.args)
+                @Suppress("UNUSED_VARIABLE") var any: Any? = func.apply(parsed.args)
             }
-
             finishWork()
         } catch (err: Exception) {
             failWork(

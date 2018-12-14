@@ -1,3 +1,7 @@
+## 1.X.X (Unreleased)
+
+* Update dependencies.
+
 ## 1.1.5 (October 14th, 2018)
 
 * Fix Java `yieldStage`, to actually allow it to commit the transaction.
