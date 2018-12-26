@@ -11,6 +11,8 @@ import kotlin.coroutines.CoroutineContext
 /**
  * A Wrapper around DelayedKotlinWork implementing a lot of the boilerplate for you.
  *
+ * @param garbageHeap
+ *  The work garbage heap.
  * @param id
  *  The ID of this piece of work.
  * @param stage
@@ -21,6 +23,7 @@ import kotlin.coroutines.CoroutineContext
  *  The priority of this piece of work.
  */
 abstract class BackgroundKotlinWork(
+    garbageHeap: WorkGarbage,
     id: Long,
     stage: Int,
     strand: String,
@@ -30,7 +33,7 @@ abstract class BackgroundKotlinWork(
     override val Stage: Int = stage
     override val Priority: Int = priority
     override val Strand: String = strand
-
+    override val GarbageHeap: WorkGarbage = garbageHeap
     private val startTime = Instant.now()
     override fun getStartTime(): Instant = startTime
 

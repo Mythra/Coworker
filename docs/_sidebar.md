@@ -2,9 +2,10 @@
 
 * Getting started
 
-  * [Quick start](quickstart.md)
   * [Migrations](migrations.md)
+  * [Setup](setup.md)
   * [Inserting Work](insert-work.md)
+  * [Defining a Job](job-creation.md)
   * [Strands](strands.md)
   * [Using The Service Checker](service-checker.md)
   * [Using Dynamic Config](dynamic-config.md)

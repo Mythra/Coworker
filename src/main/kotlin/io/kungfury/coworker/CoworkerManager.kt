@@ -55,17 +55,21 @@ class CoworkerManager(
     private val executorService = Executors.newFixedThreadPool(nThreads)
     private var futures = ArrayList<Future<*>>()
     private val futureWorkMap = HashMap<Int, Long>()
+    private val garbageHeap = WorkGarbage(configurationInput)
 
     // Ensure we start off checking old work.
     private var lastCheckedWork: Instant = Instant.now().minusSeconds(10).minus(configurationInput.getWorkCheckDelay())
     private var nextCalculatedCheck: Long = Instant.now().minusSeconds(5).epochSecond
     private val workNotifiedAbout = ArrayList<WorkNotification>()
 
-    private var listened: ReceiveChannel<String> = connectionManager.listenToChannel("workers")
+    private var listened: ReceiveChannel<String> = connectionManager.listenToChannel(
+        "workers",
+        configurationInput.getFailureLimit()
+    )
     private val networkAddr: String = NetworkUtils.getLocalHostLANAddress().hostAddress
 
     // The parameter size used for calling constructors.
-    private val PARAMETER_SIZE = 5
+    private val PARAMETER_SIZE = 6
 
     /**
      * Starts this Coworker manager.
@@ -76,7 +80,7 @@ class CoworkerManager(
         LOGGER.info("Starting Coworker Manager...")
 
         Runtime.getRuntime().addShutdownHook(Thread {
-            runBlocking { WorkGarbage.Cleanup(connectionManager) }
+            runBlocking { garbageHeap.Cleanup(connectionManager) }
         })
 
         // Cleanup any work left behind by restart.
@@ -85,9 +89,9 @@ class CoworkerManager(
         thread(name = "CleanupThread") {
             while (true) {
                 LOGGER.info("Checking if we should cleanup.")
-                if (WorkGarbage.ShouldCleanup()) {
+                if (garbageHeap.ShouldCleanup()) {
                     LOGGER.info("We should Cleanup.")
-                    runBlocking { WorkGarbage.Cleanup(connectionManager) }
+                    runBlocking { garbageHeap.Cleanup(connectionManager) }
                 }
                 if (serviceChecker != null) {
                     val newOfflineNodes = runBlocking { serviceChecker.getNewOfflineNodes().await() }
@@ -124,6 +128,7 @@ class CoworkerManager(
 
                         val work = constructor.call(
                             connectionManager,
+                            garbageHeap,
                             foundWork.workId,
                             foundWork.Stage,
                             foundWork.Strand,
@@ -152,6 +157,7 @@ class CoworkerManager(
 
                         val work = constructor.newInstance(
                             connectionManager,
+                            garbageHeap,
                             foundWork.workId,
                             foundWork.Stage,
                             foundWork.Strand,
@@ -192,7 +198,7 @@ class CoworkerManager(
                     } else {
                         try {
                             val isWorkLocked = runBlocking { IsWorkLocked(workId) }
-                            if (isWorkLocked && !WorkGarbage.isScheduledForDelete(workId)) {
+                            if (isWorkLocked && !garbageHeap.isScheduledForDelete(workId)) {
                                 runBlocking { ReleaseToPool(workId) }
                             }
                         } catch (exc: Exception) {

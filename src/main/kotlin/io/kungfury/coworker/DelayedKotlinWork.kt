@@ -22,6 +22,7 @@ interface DelayedKotlinWork {
     val Stage: Int
     val Priority: Int
     val Strand: String
+    val GarbageHeap: WorkGarbage
 
     /**
      * Get the time this piece of work started working at for computing long running workers.
@@ -95,9 +96,8 @@ interface DelayedKotlinWork {
      *  This increments the stage by one so when the next part is run it's "progressed".
      * </p>
      */
-    suspend fun yieldNextStage(connectionManager: ConnectionManager, instant: Instant = Instant.now()) {
+    suspend fun yieldNextStage(connectionManager: ConnectionManager, instant: Instant = Instant.now()) =
         yieldStage(connectionManager, this.Stage + 1, instant = instant)
-    }
 
     /**
      * Yields the piece of work to higher priority work, not progressing the stage of this work.
@@ -113,16 +113,13 @@ interface DelayedKotlinWork {
      *     but yield to any higher priority work before you retry.
      * </p>
      */
-    suspend fun yieldCurrentStage(connectionManager: ConnectionManager, instant: Instant = Instant.now()) {
+    suspend fun yieldCurrentStage(connectionManager: ConnectionManager, instant: Instant = Instant.now()) =
         yieldStage(connectionManager, this.Stage, instant = instant)
-    }
 
     /**
      * Finish the piece of work, mark it as completed.
      */
-    suspend fun finishWork() {
-        WorkGarbage.AddJobToCleanupHeap(Id)
-    }
+    suspend fun finishWork() = GarbageHeap.AddJobToCleanupHeap(Id)
 
     /**
      * Mark a piece of work as failed.

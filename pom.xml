@@ -55,7 +55,7 @@
         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-coroutines-core</artifactId>
-            <version>1.0.1</version>
+            <version>1.1.0</version>
         </dependency>
 
         <dependency>
@@ -282,7 +282,7 @@
                     <dependency>
                         <groupId>com.github.shyiko</groupId>
                         <artifactId>ktlint</artifactId>
-                        <version>0.21.0</version>
+                        <version>0.29.0</version>
                     </dependency>
                 </dependencies>
             </plugin>

@@ -1,6 +1,7 @@
 package io.kungfury.coworkerperf;
 
 import io.kungfury.coworker.BackgroundJavaWork;
+import io.kungfury.coworker.WorkGarbage;
 import io.kungfury.coworker.dbs.ConnectionManager;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -11,8 +12,8 @@ import java.time.Instant;
 public class RemoteJavaJob extends BackgroundJavaWork {
     private ConnectionManager conn;
 
-    public RemoteJavaJob(ConnectionManager connManager, long id, int stage, String strand, int priority) {
-        super(id, stage, strand, priority);
+    public RemoteJavaJob(ConnectionManager connManager, WorkGarbage garbageHeap, long id, int stage, String strand, int priority) {
+        super(garbageHeap, id, stage, strand, priority);
 
         this.conn = connManager;
     }

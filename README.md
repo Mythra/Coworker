@@ -76,6 +76,10 @@ three job types:
   * EchoJob - Echos to the console, and then exits.
   * RemoteJob - Makes an https call to google, waits a minute, and then finishes.
 
+However we highly recommend reading the [documentation](https://coworker.kungfury.io)
+for an in-depth explanation of what constructor params we pass into jobs,
+and an explanation of why things are the way they are.
+
 ## Benchmarks ##
 
 _NOTE: Bencmarks were done on the following scenarios:_

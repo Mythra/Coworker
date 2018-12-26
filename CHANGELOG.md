@@ -1,6 +1,9 @@
 ## 1.X.X (Unreleased)
 
 * Update dependencies.
+* Allow failure limit for channel to be configured.
+* WorkGarbage is no longer global, and can be configured through the same interface.
+* Finalize JobCreation Interface, and document it.
 
 ## 1.1.5 (October 14th, 2018)
 

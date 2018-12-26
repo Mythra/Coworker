@@ -11,6 +11,7 @@ public abstract class BackgroundJavaWork implements DelayedJavaWork {
     private String _strand;
     private int _priority;
     private Instant startTime;
+    private WorkGarbage _garbagHeap;
 
     /**
      * Initialize a BackgroundJavaWork provides an easier wrapper around DelayedJavaWork.
@@ -24,12 +25,18 @@ public abstract class BackgroundJavaWork implements DelayedJavaWork {
      * @param priority
      *  The priority of this job.
      */
-    public BackgroundJavaWork(long id, int stage, String strand, int priority) {
+    public BackgroundJavaWork(WorkGarbage garbageHeap, long id, int stage, String strand, int priority) {
+        this._garbagHeap = garbageHeap;
         this._id = id;
         this._stage = stage;
         this._strand = strand;
         this._priority = priority;
         this.startTime = Instant.now();
+    }
+
+    @Override
+    public WorkGarbage getGarbageHeap() {
+        return this._garbagHeap;
     }
 
     @Override

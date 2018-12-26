@@ -120,6 +120,8 @@ interface ConnectionManager {
      *
      * @param channel
      *  The channel name to listen too.
+     * @param failureLimit
+     *  The amount of failures that should be tolerated while listening to the stream.
      */
-    fun listenToChannel(channel: String): ReceiveChannel<String>
+    fun listenToChannel(channel: String, failureLimit: Short = 3): ReceiveChannel<String>
 }

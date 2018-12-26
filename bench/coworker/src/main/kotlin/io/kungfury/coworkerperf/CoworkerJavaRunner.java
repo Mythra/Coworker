@@ -20,7 +20,14 @@ public class CoworkerJavaRunner {
             return hikariConfig;
         }), null);
         CoworkerManager manager = new CoworkerManager(cm, threads, null,
-            new StaticCoworkerConfigurationInput(Duration.parse("PT5M"), new HashMap<>()));
+            new StaticCoworkerConfigurationInput(
+                Duration.ofMinutes(5),
+                new HashMap<>(),
+                3,
+                1000,
+                Duration.ofSeconds(30L)
+            )
+        );
         manager.Start();
     }
 }

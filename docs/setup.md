@@ -1,4 +1,4 @@
-# Getting Started With Coworker #
+# Setup in Code With Coworker #
 
 Getting started with Coworker is hopefully a rather simple process. Unfortunately there
 are some pre-requisites to standing up Coworker. You must be running:
@@ -71,10 +71,13 @@ stopping/starting your workers.
 In this example we'll create a static configuration object. The two pieces of configuration we'll
 need to provide are as follows:
 
-| Variable Name  | Description                                                                                                                                                       |
-|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| checkWorkEvery | How often we perform a full scan of the table to check for work we didn't get a notification for. Ideally this should always return 0 results, but things happen. |
-| nstrand        | A map of "nstrands". Nstrands allow you to limit jobs based on an ad-hoc tag. View the n-stranding documentation for more info.                                   |
+| Variable Name   | Description                                                                                                                                                       |
+|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| checkWorkEvery  | How often we perform a full scan of the table to check for work we didn't get a notification for. Ideally this should always return 0 results, but things happen. |
+| nstrand         | A map of "nstrands". Nstrands allow you to limit jobs based on an ad-hoc tag. View the n-stranding documentation for more info.                                   |
+| failureLimit    | How many failures should be allowed while processing a stream of notifications before achieving a new connection.                                                 |
+| garbageHeapSize | The max size of DELETEs to buffer (note there is also a duration factor).                                                                                         |
+| cleanupDuration | The duration in seconds to cleanup regardless of size.                                                                                                            |
 
 ***Kotlin:***
 
@@ -84,7 +87,7 @@ import io.kungfury.coworker.StaticCoworkerConfigurationInput
 import java.time.Duration
 
 fun getStaticConfiguration(): StaticCoworkerConfigurationInput {
-  return StaticCoworkerConfigurationInput(Duration.parse("PT5M"), HashMap())
+  return StaticCoworkerConfigurationInput(Duration.parse("PT5M"), HashMap(), 3, 1000, Duration.ofSeconds(30))
 }
 ```
 
@@ -98,7 +101,7 @@ import java.util.HashMap;
 
 public class Utils {
     static StaticCoworkerConfigurationInput getStaticConfiguration() {
-        return new StaticCoworkerConfigurationInput(Duration.parse("PT5M"), new HashMap<>());
+        return new StaticCoworkerConfigurationInput(Duration.parse("PT5M"), new HashMap<>(), 3, 1000, Duration.ofSeconds(30));
     }
 }
 ```

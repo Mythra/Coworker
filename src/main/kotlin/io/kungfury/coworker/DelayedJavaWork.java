@@ -14,6 +14,12 @@ import java.time.Instant;
 public interface DelayedJavaWork {
     /**
      * @return
+     *  The work garbage heap.
+     */
+    WorkGarbage getGarbageHeap();
+
+    /**
+     * @return
      *  The ID of this delayed piece of work.
      */
     long getID();
@@ -165,7 +171,7 @@ public interface DelayedJavaWork {
      *
      */
     default void finishWork() throws Exception {
-        WorkGarbage.INSTANCE.AddJobToCleanupHeap(this.getID());
+        getGarbageHeap().AddJobToCleanupHeap(this.getID());
     }
 
     /**

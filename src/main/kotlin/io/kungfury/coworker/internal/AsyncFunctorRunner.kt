@@ -3,6 +3,7 @@ package io.kungfury.coworker.internal
 import com.jsoniter.JsonIterator
 
 import io.kungfury.coworker.BackgroundKotlinWork
+import io.kungfury.coworker.WorkGarbage
 import io.kungfury.coworker.dbs.ConnectionManager
 import io.kungfury.coworker.internal.states.HandleAsyncFunctorState
 
@@ -11,11 +12,12 @@ import java.util.function.Function
 
 class AsyncFunctorRunner(
     private val connectionManager: ConnectionManager,
+    garbageHeap: WorkGarbage,
     id: Long,
     stage: Int,
     strand: String,
     priority: Int
-) : BackgroundKotlinWork(id, stage, strand, priority) {
+) : BackgroundKotlinWork(garbageHeap, id, stage, strand, priority) {
     private var internalState = ""
 
     override fun serializeState(): String = internalState

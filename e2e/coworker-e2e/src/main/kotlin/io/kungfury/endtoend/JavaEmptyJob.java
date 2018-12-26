@@ -1,11 +1,12 @@
 package io.kungfury.endtoend;
 
 import io.kungfury.coworker.BackgroundJavaWork;
+import io.kungfury.coworker.WorkGarbage;
 import io.kungfury.coworker.dbs.ConnectionManager;
 
 public class JavaEmptyJob extends BackgroundJavaWork {
-    public JavaEmptyJob(ConnectionManager _connManager, long id, int stage, String strand, int priority) {
-        super(id, stage, strand, priority);
+    public JavaEmptyJob(ConnectionManager _connManager, WorkGarbage garbageHeap, long id, int stage, String strand, int priority) {
+        super(garbageHeap, id, stage, strand, priority);
     }
 
     @Override

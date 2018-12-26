@@ -168,23 +168,23 @@ class PgConnectionManager : ConnectionManager {
     }
 
     @UseExperimental(ExperimentalCoroutinesApi::class)
-    override fun listenToChannel(channel: String): ReceiveChannel<String> {
+    override fun listenToChannel(channel: String, countLimit: Short): ReceiveChannel<String> {
         return GlobalScope.produce {
             CoroutineName("PostgresListen( $channel )")
+
             // So all in all this is subpar.
             //
             // Why is this subpar do you ask? Well because postgres keeps LISTEN/NOTIFY setup to one connection.
-            // Meaning there's no way to effeciently only use one connection from the thread pool whenever we need it.
+            // Meaning there's no way to efficiently only use one connection from the thread pool whenever we need it.
             // We always have to bogart one connection for LISTEN/NOTIFY.
             //
             // It's also subpar because there's no real way to know if we've got a transient failure, or if we need
-            // to reconnect to the db.
+            // to reconnect to the db. Even if we were to enumerate all exception possibilities, differing architectures
+            // may mean something is "transient" while in someone elses architecture it isn't.
             //
             // So this method attempts to be "acceptable to failures". Everytime we get an error we'll increase a
-            // counter. If the counter hits 3, we determine "this is a bad connection", and attempt to get a new one.
-            // If we fail to get a new connection the channel closes and you should re open.
-            //
-            // You may be asking yourself why 3 failures? And the answer is honestly it was totally arbitrary.
+            // counter. If the counter hits countLimit, we determine "this is a bad connection",
+            // and attempt to get a new one. If we fail to get a new connection the channel closes and you should reopen.
             var raw_conn: Connection? = null
             var conn: PGConnection?
             var counter = 0
@@ -204,7 +204,7 @@ class PgConnectionManager : ConnectionManager {
                 statement.close()
 
                 while (true) {
-                    if (counter >= 3) {
+                    if (counter >= countLimit) {
                         raw_conn = connectionPool.connection
                         conn = raw_conn.unwrap(PGConnection::class.java)
                     }

@@ -4,33 +4,22 @@ import io.kungfury.coworker.dbs.ConnectionManager
 import io.kungfury.coworker.dbs.ConnectionType
 import io.kungfury.coworker.dbs.Marginalia
 
+import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.locks.ReentrantLock
 
 /**
  * WorkGarbage is a landing ground for `finishWork`.
  *
- * Instead of making a whole bunch of individual calls to the database for DELETEs we decide to batch them up
- * and send them every 1k jobs, or every minute. This increases the speed of jobs worked considerably.
+ * WorkGarbage is meant to act as a buffer for DELETEs in the database. It does this to be nice to your DB.
+ * WorkGarbage gets passed into your job, and is what gets called under the hood when you finish a piece of particular
+ * work. WorkGarbage is not in the path for fail work.
  */
-object WorkGarbage {
+class WorkGarbage(config: CoworkerConfigurationInput) {
     private val lock = ReentrantLock()
     private var lastCleaned = Instant.now()
-    private val MAX_JOBS: Int
-
-    init {
-        val env = System.getenv()
-        if (env.containsKey("COWORKER_HEAP_MAX_SIZE")) {
-            val potentialInt = env.get("COWORKER_HEAP_MAX_SIZE")!!.toIntOrNull()
-            if (potentialInt != null) {
-                MAX_JOBS = potentialInt
-            } else {
-                MAX_JOBS = 1000
-            }
-        } else {
-            MAX_JOBS = 1000
-        }
-    }
+    private val CLEANUP_INTERVAL: Duration = config.getCleanDuration()
+    private val MAX_JOBS: Int = config.getGarbageMaxSize()
     private val garbageHeap = ArrayList<Long>(MAX_JOBS)
 
     /**
@@ -59,7 +48,7 @@ object WorkGarbage {
         if (garbageHeap.isEmpty()) {
             return false
         }
-        if (Instant.now().epochSecond - 30 > lastCleaned.epochSecond) {
+        if (Instant.now().minus(CLEANUP_INTERVAL).isBefore(lastCleaned)) {
             return true
         }
         if (garbageHeap.size >= MAX_JOBS) {

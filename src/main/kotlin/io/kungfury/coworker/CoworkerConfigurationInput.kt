@@ -1,5 +1,6 @@
 package io.kungfury.coworker
 
+import java.time.Duration
 import java.time.temporal.TemporalAmount
 
 interface CoworkerConfigurationInput {
@@ -12,4 +13,28 @@ interface CoworkerConfigurationInput {
      * Get the map of nstrands.
      */
     fun getNstrandMap(): Map<Pair<String, Regex>, Int>
+
+    /**
+     * Get the allowed failure limit for reading from the stream.
+     *
+     * @return
+     *  The failure limit for listening to the channel.
+     */
+    fun getFailureLimit(): Short
+
+    /**
+     * Get the max garbage heap size (buffer deletes).
+     *
+     * @return
+     *  The maximum garbage heap size.
+     */
+    fun getGarbageMaxSize(): Int
+
+    /**
+     * Get the duration between garbage cleanings regardless of size.
+     *
+     * @return
+     *  The duration of garbage clean size.
+     */
+    fun getCleanDuration(): Duration
 }
