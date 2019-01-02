@@ -8,6 +8,12 @@ import io.kungfury.coworker.dbs.ConnectionType
 import io.kungfury.coworker.dbs.Marginalia
 import io.kungfury.coworker.dbs.TextSafety
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Metrics
+import io.micrometer.core.instrument.Tag
+import io.micrometer.core.instrument.Tags
+import io.micrometer.core.instrument.Timer
+
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -24,6 +30,8 @@ import org.slf4j.LoggerFactory
 
 import java.io.IOException
 import java.sql.Connection
+import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.TimeoutException
 import java.util.function.Function
 
@@ -34,6 +42,8 @@ class PgConnectionManager : ConnectionManager {
     private val LOGGER = LoggerFactory.getLogger(PgConnectionManager::class.java)
     private val connectionPool: HikariDataSource
     private val timeoutLong: Long?
+    private var metricRegistry: MeterRegistry = Metrics.globalRegistry
+    private val queryTimer: Timer
 
     /**
      * A generic java compatible constructor for PgConnectionManager.
@@ -42,11 +52,17 @@ class PgConnectionManager : ConnectionManager {
      *  A function that takes in a "HikariConfig" object, configures it, and returns a configured HikariConfig.
      * @param timeout
      *  An optional timeout in ms. Defaults to 300000L.
+     * @param metricRegistry
+     *  The metric registry to use.
      */
-    constructor(configureSource: Function<HikariConfig, HikariConfig>, timeout: Long?) {
+    constructor(configureSource: Function<HikariConfig, HikariConfig>, timeout: Long?, metricRegistry: MeterRegistry? = null) {
         val finalizedConfig = configureSource.apply(HikariConfig())
         connectionPool = HikariDataSource(finalizedConfig)
         timeoutLong = timeout
+        if (metricRegistry != null) {
+            this.metricRegistry = metricRegistry
+        }
+        queryTimer = this.metricRegistry.timer("coworker.pg.query_time", Tags.empty())
     }
 
     /**
@@ -59,6 +75,7 @@ class PgConnectionManager : ConnectionManager {
         val finalizedConfig = configureSource(HikariConfig())
         connectionPool = HikariDataSource(finalizedConfig)
         timeoutLong = null
+        queryTimer = this.metricRegistry.timer("coworker.pg.query_time", Tags.empty())
     }
 
     /**
@@ -73,6 +90,7 @@ class PgConnectionManager : ConnectionManager {
         val finalizedConfig = configureSource(HikariConfig())
         connectionPool = HikariDataSource(finalizedConfig)
         timeoutLong = timeout
+        queryTimer = this.metricRegistry.timer("coworker.pg.query_time", Tags.empty())
     }
 
     override val TIMEOUT_MS
@@ -81,44 +99,46 @@ class PgConnectionManager : ConnectionManager {
 
     @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class)
     override fun <T> executeTransaction(query: Function<Connection, T>, commitOnExit: Boolean): T {
-        return runBlocking {
-            withTimeout(TIMEOUT_MS) {
-                CoroutineName("Coworker - ExecuteTransactionJava")
+        return queryTimer.recordCallable {
+            runBlocking {
+                withTimeout(TIMEOUT_MS) {
+                    CoroutineName("Coworker - ExecuteTransactionJava")
 
-                var result: T? = null
-                var error: Exception? = null
-                var conn: Connection? = null
+                    var result: T? = null
+                    var error: Exception? = null
+                    var conn: Connection? = null
 
-                try {
-                    conn = connectionPool.connection
-                    conn.autoCommit = false
-                    result = query.apply(conn)
-                    if (commitOnExit) {
-                        conn.commit()
+                    try {
+                        conn = connectionPool.connection
+                        conn.autoCommit = false
+                        result = query.apply(conn)
+                        if (commitOnExit) {
+                            conn.commit()
+                        }
+                    } catch (e: Exception) {
+                        if (conn != null) {
+                            conn.rollback()
+                            error = e
+                        }
+                    } finally {
+                        if (conn != null) {
+                            conn.close()
+                        }
                     }
-                } catch (e: Exception) {
-                    if (conn != null) {
-                        conn.rollback()
-                        error = e
+
+                    if (!isActive) {
+                        throw TimeoutException("Failed to complete in time!")
                     }
-                } finally {
-                    if (conn != null) {
-                        conn.close()
+
+                    if (error != null) {
+                        throw error
                     }
-                }
 
-                if (!isActive) {
-                    throw TimeoutException("Failed to complete in time!")
-                }
-
-                if (error != null) {
-                    throw error
-                }
-
-                if (result == null) {
-                    throw IllegalStateException("Result was null at the end of executeTransactionJava")
-                } else {
-                    result
+                    if (result == null) {
+                        throw IllegalStateException("Result was null at the end of executeTransactionJava")
+                    } else {
+                        result
+                    }
                 }
             }
         }
@@ -128,6 +148,7 @@ class PgConnectionManager : ConnectionManager {
     override suspend fun <T> executeTransaction(query: suspend (Connection) -> T, commitOnExit: Boolean): T {
         return withTimeout(TIMEOUT_MS) {
             CoroutineName("Coworker - ExecuteTransaction")
+            val timeStart = Instant.now()
 
             var result: T? = null
             var error: Exception? = null
@@ -150,6 +171,8 @@ class PgConnectionManager : ConnectionManager {
                     conn.close()
                 }
             }
+            val timeEnd = Instant.now()
+            queryTimer.record(Duration.between(timeStart, timeEnd))
 
             if (!isActive) {
                 throw TimeoutException("Failed to complete in time!")
@@ -169,6 +192,8 @@ class PgConnectionManager : ConnectionManager {
 
     @UseExperimental(ExperimentalCoroutinesApi::class)
     override fun listenToChannel(channel: String, countLimit: Short): ReceiveChannel<String> {
+        val failureGauge = this.metricRegistry.gauge("coworker.listen.failure_gauge", Tags.of(Tag.of("channel", channel)), 0)
+
         return GlobalScope.produce {
             CoroutineName("PostgresListen( $channel )")
 
@@ -225,11 +250,13 @@ class PgConnectionManager : ConnectionManager {
                             }
                         }
                         if (counter > 0) {
+                            failureGauge?.dec()
                             counter--
                         }
                     } catch (err: Exception) {
                         LOGGER.error("Failed to check for notification on connection!\n${err.message}\n" +
                             "  ${err.stackTrace.joinToString("\n  ")}")
+                        failureGauge?.inc()
                         counter++
                     }
                     Thread.sleep(500)

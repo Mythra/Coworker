@@ -4,6 +4,9 @@ import io.kungfury.coworker.dbs.ConnectionManager
 import io.kungfury.coworker.dbs.ConnectionType
 import io.kungfury.coworker.dbs.Marginalia
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tags
+
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.locks.ReentrantLock
@@ -15,18 +18,22 @@ import java.util.concurrent.locks.ReentrantLock
  * WorkGarbage gets passed into your job, and is what gets called under the hood when you finish a piece of particular
  * work. WorkGarbage is not in the path for fail work.
  */
-class WorkGarbage(config: CoworkerConfigurationInput) {
+class WorkGarbage(config: CoworkerConfigurationInput, metricRegistry: MeterRegistry) {
     private val lock = ReentrantLock()
     private var lastCleaned = Instant.now()
     private val CLEANUP_INTERVAL: Duration = config.getCleanDuration()
     private val MAX_JOBS: Int = config.getGarbageMaxSize()
     private val garbageHeap = ArrayList<Long>(MAX_JOBS)
 
+    private val receivedCleanup = metricRegistry.counter("coworker.garbage.heap.received", Tags.empty())
+    private val actuallyCleaned = metricRegistry.counter("coworker.garbage.heap.cleaned", Tags.empty())
+
     /**
      * Add a job to the cleanup heap.
      */
     fun AddJobToCleanupHeap(id: Long) {
         lock.lock()
+        receivedCleanup.increment()
         garbageHeap.add(id)
         lock.unlock()
     }
@@ -63,19 +70,21 @@ class WorkGarbage(config: CoworkerConfigurationInput) {
     suspend fun Cleanup(connectionManager: ConnectionManager) {
         when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {
+                val array = garbageHeap.toTypedArray()
                 connectionManager.executeTransaction { connection ->
                     val statement = connection.prepareStatement(Marginalia.AddMarginalia(
                         "WorkGarbage_Cleanup",
                         "DELETE FROM public.delayed_work WHERE id = ANY(?)"
                     ))
                     lock.lock()
-                    statement.setArray(1, connection.createArrayOf("BIGINT", garbageHeap.toTypedArray()))
+                    statement.setArray(1, connection.createArrayOf("BIGINT", array))
                     garbageHeap.clear()
                     lock.unlock()
                     statement.execute()
                     connection.commit()
                     lastCleaned = Instant.now()
                 }
+                actuallyCleaned.increment(array.size.toDouble())
             }
         }
     }

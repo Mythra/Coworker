@@ -11,6 +11,10 @@ import io.kungfury.coworker.internal.DescribedWork
 import io.kungfury.coworker.internal.WorkNotification
 import io.kungfury.coworker.utils.NetworkUtils
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Metrics
+import io.micrometer.core.instrument.Tags
+
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.runBlocking
@@ -34,28 +38,36 @@ import kotlin.reflect.full.primaryConstructor
  *
  * @param connectionManager
  *  The connection manager to the datastore.
- * @param checkWorkEvery
- *  The TemporalAmount for when to check the DB for missed notifications.
- * @param nstrandMap
- *  The nstrand mapping of <strand name, max running at a time>.
  * @param threads
  *  The amount of threads to run (cannot be lower than one).
  * @param serviceChecker
  *  The optional service checker to check for dead nodes in consul.
+ * @param registry
+ *  The optional metrics registry to write too, writes to global registry which defaults to null.
+ * @param configurationInput
+ *  The configuration input.
  */
 class CoworkerManager(
     private val connectionManager: ConnectionManager,
     threads: Int,
     private val serviceChecker: ServiceChecker?,
+    registry: MeterRegistry?,
     private val configurationInput: CoworkerConfigurationInput
 ) {
     private val LOGGER = LoggerFactory.getLogger(CoworkerManager::class.java)
+    private val metricRegistry: MeterRegistry = if (registry == null) {
+        Metrics.globalRegistry
+    } else {
+        registry
+    }
 
     private val nThreads = if (threads < 1) { 1 } else { threads }
     private val executorService = Executors.newFixedThreadPool(nThreads)
     private var futures = ArrayList<Future<*>>()
     private val futureWorkMap = HashMap<Int, Long>()
-    private val garbageHeap = WorkGarbage(configurationInput)
+    private val garbageHeap = WorkGarbage(configurationInput, metricRegistry)
+
+    private var cleanupRuns = metricRegistry.counter("coworker.garbage.heap.runs", Tags.empty())
 
     // Ensure we start off checking old work.
     private var lastCheckedWork: Instant = Instant.now().minusSeconds(10).minus(configurationInput.getWorkCheckDelay())
@@ -80,6 +92,7 @@ class CoworkerManager(
         LOGGER.info("Starting Coworker Manager...")
 
         Runtime.getRuntime().addShutdownHook(Thread {
+            cleanupRuns.increment()
             runBlocking { garbageHeap.Cleanup(connectionManager) }
         })
 
@@ -91,6 +104,7 @@ class CoworkerManager(
                 LOGGER.info("Checking if we should cleanup.")
                 if (garbageHeap.ShouldCleanup()) {
                     LOGGER.info("We should Cleanup.")
+                    cleanupRuns.increment()
                     runBlocking { garbageHeap.Cleanup(connectionManager) }
                 }
                 if (serviceChecker != null) {

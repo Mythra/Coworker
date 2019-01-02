@@ -95,6 +95,12 @@
             <version>1.7.25</version>
         </dependency>
 
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+
 
         <!-- Test Level Deps -->
         <dependency>

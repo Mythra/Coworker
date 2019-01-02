@@ -41,7 +41,7 @@ fun getConnectionManager(): PgConnectionManager {
   return PgConnectionManager({ toConfigure ->
     toConfigure.jdbcUrl = System.getenv("JDBC_URL")
     toConfigure
-  }, null)
+  }, null, null)
 }
 ```
 
@@ -56,7 +56,7 @@ public class Utils {
     return new PgConnectionManager((Function<HikariConfig, HikariConfig>) (hikariConfig -> {
       hikariConfig.setJdbcUrl(System.getenv("JDBC_URL"));
       return hikariConfig;
-    }), null);
+    }), null, null);
   }
 }
 ```
@@ -110,7 +110,7 @@ public class Utils {
 
 Once you've gone ahead and creating a ConnectionManager + a Configuration Object, you're finally
 ready to create an Instance of Coworker. Remember this part of the documentation does not cover using
-consul for node recovery, so we'll pass in: `null` for our ServiceChecker:
+consul for node recovery, so we'll pass in: `null` for our ServiceChecker, we'll also pass in `null` for our MetricRegistry:
 
 ***Kotlin:***
 
@@ -120,7 +120,7 @@ import io.kungfury.coworker.StaticCoworkerConfigurationInput
 import io.kungfury.coworker.dbs.postgres.PgConnectionManager
 
 fun createCoworkerInstance(config: StaticCoworkerConfigurationInput, cm: PgconnectionManager): CoworkerManager {
-    return CoworkerManager(cm, 10, null, config)
+    return CoworkerManager(cm, 10, null, null, config)
 }
 ```
 
@@ -133,7 +133,7 @@ import io.kungfury.coworker.StaticCoworkerConfigurationInput;
 
 public class Utils {
     static CoworkerManager createCoworkerInstance(StaticCoworkerConfigurationInput config, PgConnectionManager cm) {
-        return new CoworkerManager(cm, 10, null, config);
+        return new CoworkerManager(cm, 10, null, null, config);
     }
 }
 ```
