@@ -1,4 +1,4 @@
-## 1.X.X (Unreleased)
+## 1.2.0 (Unreleased)
 
 * Update dependencies.
 * Allow failure limit for channel to be configured.

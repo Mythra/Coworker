@@ -61,7 +61,7 @@ interface DelayedKotlinWork {
 
         when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {
-                connectionManager.executeTransaction ({ connection: Connection ->
+                connectionManager.executeTransaction({ connection: Connection ->
                     val statement = connection.prepareStatement(AddMarginalia(
                         "DelayedKotlinWork_yieldNext",
                         "UPDATE public.delayed_work SET run_at = ?, stage = ?, state = ?, locked_by = NULL WHERE id = ?"

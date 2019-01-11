@@ -389,7 +389,7 @@ class CoworkerManager(
 
         when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {
-                return connectionManager.executeTransaction ({ connection: Connection ->
+                return connectionManager.executeTransaction({ connection: Connection ->
                     val statement = connection.prepareStatement(AddMarginalia(
                         "CoworkerManager_attemptLock",
                         "WITH select_work AS ( " +
@@ -481,7 +481,7 @@ class CoworkerManager(
 
         when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {
-                connectionManager.executeTransaction ({ connection ->
+                connectionManager.executeTransaction({ connection ->
                     val statement = connection.prepareStatement(AddMarginalia(
                         "CoworkerManager_ReleaseToPoolForHosts",
                         "UPDATE public.delayed_work SET locked_by = NULL WHERE locked_by = ANY(?)"
@@ -564,7 +564,7 @@ class CoworkerManager(
 
         when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {
-                connectionManager.executeTransaction ({ connection: Connection ->
+                connectionManager.executeTransaction({ connection: Connection ->
                     val statement = connection.prepareStatement(AddMarginalia(
                         "CoworkerManager_FailWork",
                         "DELETE FROM public.delayed_work WHERE id = ?"

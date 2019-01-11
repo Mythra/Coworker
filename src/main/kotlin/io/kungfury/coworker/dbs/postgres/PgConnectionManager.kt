@@ -93,6 +93,26 @@ class PgConnectionManager : ConnectionManager {
         queryTimer = this.metricRegistry.timer("coworker.pg.query_time", Tags.empty())
     }
 
+    /**
+     * A PgConnectionManager constructor built specifically for kotlin with timeout.
+     *
+     * @param configureSource
+     *  A block that takes a HikariConfig, configures it, and returns a configured HikariConfig.
+     * @param timeout
+     *  An optional timeout value.
+     * @param meterRegistry
+     *  The metric registry to use
+     */
+    constructor(configureSource: (toConfigure: HikariConfig) -> HikariConfig, timeout: Long?, meterRegistry: MeterRegistry?) {
+        val finalizedConfig = configureSource(HikariConfig())
+        connectionPool = HikariDataSource(finalizedConfig)
+        timeoutLong = timeout
+        if (meterRegistry != null) {
+            this.metricRegistry = meterRegistry
+        }
+        queryTimer = this.metricRegistry.timer("coworker.pg.query_time", Tags.empty())
+    }
+
     override val TIMEOUT_MS
         get() = if (timeoutLong == null) { 300000L } else { timeoutLong }
     override val CONNECTION_TYPE: ConnectionType = ConnectionType.POSTGRES
