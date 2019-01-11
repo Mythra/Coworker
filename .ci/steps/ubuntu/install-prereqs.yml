@@ -1,3 +1,4 @@
 ---
 steps:
   - script: 'sudo apt-get update'
+  - script: 'sudo apt-get install -y postgresql-client'
