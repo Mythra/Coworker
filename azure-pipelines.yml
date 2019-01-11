@@ -1,0 +1,9 @@
+---
+jobs:
+  - job: Linux
+    pool:
+      vmImage: 'Ubuntu 16.04'
+    steps:
+      - template: .ci/steps/ubuntu/install-prereqs.yml
+      - template: .ci/steps/ubuntu/build.yml
+      - template: .ci/steps/ubuntu/test.yml

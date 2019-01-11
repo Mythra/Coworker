@@ -1,0 +1,6 @@
+---
+steps:
+  - script: 'mvn package'
+  - script: 'mvn antrun:run@ktlint'
+  - script: '(cd bench/coworker && mvn verify)'
+  - script: '(cd e2e/coworker-e2e && mvn verify)'
