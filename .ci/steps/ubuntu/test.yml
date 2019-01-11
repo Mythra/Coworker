@@ -1,9 +1,9 @@
 ---
 steps:
-  - script: 'docker run --name coworker-container -e POSTGRES_PASSWORD=supasekrit -d postgres'
+  - script: 'docker run --name coworker-container -p 5432:5432 -e POSTGRES_PASSWORD=supasekrit -d postgres'
   - script: './.ci/wait-for-it.sh 5432'
     timeoutInMinutes: 1
-  - script: '(cd e2e/coworker-e2e/ && java -jar ./target/CoworkerE2e.jar)'
+  - script: '(cd e2e/coworker-e2e/ && THREADS=1 JDBC_URL="jdbc:postgresql://localhost:5432" java -jar ./target/CoworkerE2e.jar)'
     timeoutInMinutes: 2
   - script: 'docker stop $(docker ps -aq)'
   - script: 'docker rm $(docker ps -aq)'
