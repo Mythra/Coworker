@@ -1,6 +1,6 @@
 ---
 steps:
-  - script: 'docker run --name coworker-container -p 25565:5432 -e POSTGRES_PASSWORD=supasekrit -d postgres:9.5'
+  - script: 'docker run --name coworker-container -h 0.0.0.0 -p 25565:5432 -e POSTGRES_PASSWORD=supasekrit -d postgres:9.5'
   - script: './.ci/wait-for-it.sh 25565'
     timeoutInMinutes: 1
   - script: 'PGPASSWORD="supasekrit" psql -h localhost -p 25565 -U postgres -c "CREATE DATABASE coworker;"'
