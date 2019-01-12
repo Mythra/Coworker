@@ -3,8 +3,7 @@ steps:
   - script: 'docker run --name coworker-container -h 0.0.0.0 -p 25565:5432 -e POSTGRES_PASSWORD=supasekrit -d postgres:9.5'
   - script: './.ci/wait-for-it.sh 25565'
     timeoutInMinutes: 1
-  - script: 'PGPASSWORD="supasekrit" psql -h localhost -p 25565 -U postgres -c "CREATE DATABASE coworker;"'
-  - script: 'PGPASSWORD="supasekrit" psql -h localhost -p 25565 -U postgres -d coworker -a -f ./src/main/resources/migrations/1_CreateDelayedWork_pg.sql'
+  - script: './.ci/stand-up-postgres.sh'
   - script: '(cd e2e/coworker-e2e/ && THREADS=1 JDBC_URL="jdbc:postgresql://localhost:25565/coworker?user=postgres&password=supasekrit" java -jar ./target/CoworkerE2e.jar)'
     timeoutInMinutes: 2
   - script: 'docker stop $(docker ps -aq)'
