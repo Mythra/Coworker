@@ -1,10 +1,11 @@
-## 1.2.0 (Unreleased)
+## 1.2.0 (January 11th, 2019)
 
 * Update dependencies.
 * Allow failure limit for channel to be configured.
 * WorkGarbage is no longer global, and can be configured through the same interface.
 * Finalize JobCreation Interface, and document it.
 * Add Metrics to library.
+* Added CI to the OSS repo.
 
 ## 1.1.5 (October 14th, 2018)
 
