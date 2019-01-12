@@ -1,7 +1,7 @@
 ---
 steps:
-  - script: 'docker run --name coworker-container -p 25565:5432 -e POSTGRES_PASSWORD=supasekrit -d postgres'
-  - script: './.ci/wait-for-it.sh 5432'
+  - script: 'docker run --name coworker-container -p 25565:5432 -e POSTGRES_PASSWORD=supasekrit -d postgres:9.5'
+  - script: './.ci/wait-for-it.sh 25565'
     timeoutInMinutes: 1
   - script: 'PGPASSWORD="supasekrit" psql -h localhost -p 25565 -U postgres -c "CREATE DATABASE coworker;"'
   - script: 'PGPASSWORD="supasekrit" psql -h localhost -p 25565 -U postgres -d coworker -a -f ./src/main/resources/migrations/1_CreateDelayedWork_pg.sql'
