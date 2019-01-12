@@ -2,7 +2,7 @@
 
 COUNT=0
 while (( $COUNT < 10 )); do
-    PGPASSWORD="supasekrit" psql -h localhost -p 25565 -U postgres -c "CREATE DATABASE coworker;" || true
+    PGPASSWORD="supasekrit" psql -h localhost -p 25565 -U postgres -c "CREATE DATABASE coworker;" && break
     COUNT=$(( $COUNT + 1 ))
     sleep 1
 done
@@ -14,7 +14,7 @@ fi
 
 OTHER_COUNT=0
 while (( $OTHER_COUNT < 10 )); do
-    PGPASSWORD="supasekrit" psql -h localhost -p 25565 -U postgres -d coworker -a -f ./src/main/resources/migrations/1_CreateDelayedWork_pg.sql || true
+    PGPASSWORD="supasekrit" psql -h localhost -p 25565 -U postgres -d coworker -a -f ./src/main/resources/migrations/1_CreateDelayedWork_pg.sql && break
     OTHER_COUNT=$(( OTHER_COUNT + 1 ))
     sleep 1
 done
