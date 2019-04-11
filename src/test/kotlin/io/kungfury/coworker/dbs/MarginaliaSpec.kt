@@ -6,7 +6,7 @@ import io.kotlintest.specs.FunSpec
 class MarginaliaSpec : FunSpec({
     test("can properly append marginalia") {
         val text = Marginalia.AddMarginalia("MarginaliaSpec_append_marg", "a")
-        text shouldBe "a /* Class: io.kungfury.coworker.dbs.MarginaliaSpec$1$1, Function: invoke, Line: 8 */;"
+        text shouldBe "a /* Class: io.kungfury.coworker.dbs.MarginaliaSpec$1$1, Function: invokeSuspend, Line: 8 */;"
     }
 
     test("appends a semicolon") {
