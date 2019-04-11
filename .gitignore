@@ -17,3 +17,5 @@
 /e2e/coworker-e2e/*.iml
 /e2e/coworker-e2e/.idea/
 /e2e/coworker-e2e/target/
+
+/.kotlintest/

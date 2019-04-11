@@ -211,7 +211,7 @@ class PgConnectionManager : ConnectionManager {
     }
 
     @UseExperimental(ExperimentalCoroutinesApi::class)
-    override fun listenToChannel(channel: String, countLimit: Short): ReceiveChannel<String> {
+    override fun listenToChannel(channel: String, failureLimit: Short): ReceiveChannel<String> {
         val failureGauge = this.metricRegistry.gauge("coworker.listen.failure_gauge", Tags.of(Tag.of("channel", channel)), 0)
 
         return GlobalScope.produce {
@@ -228,7 +228,7 @@ class PgConnectionManager : ConnectionManager {
             // may mean something is "transient" while in someone elses architecture it isn't.
             //
             // So this method attempts to be "acceptable to failures". Everytime we get an error we'll increase a
-            // counter. If the counter hits countLimit, we determine "this is a bad connection",
+            // counter. If the counter hits failureLimit, we determine "this is a bad connection",
             // and attempt to get a new one. If we fail to get a new connection the channel closes and you should reopen.
             var raw_conn: Connection? = null
             var conn: PGConnection?
@@ -249,7 +249,7 @@ class PgConnectionManager : ConnectionManager {
                 statement.close()
 
                 while (true) {
-                    if (counter >= countLimit) {
+                    if (counter >= failureLimit) {
                         raw_conn = connectionPool.connection
                         conn = raw_conn.unwrap(PGConnection::class.java)
                     }
