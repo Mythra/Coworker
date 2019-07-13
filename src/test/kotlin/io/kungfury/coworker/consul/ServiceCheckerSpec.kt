@@ -36,11 +36,11 @@ class ServiceCheckerSpec : FunSpec({
         }
     }
     val server = MockWebServer()
-    server.setDispatcher(dispatcher)
+    server.dispatcher = dispatcher
     server.start()
 
     test("getNewOfflineNodes can parse a full service") {
-        val url = server.url("/v1").uri().toASCIIString()
+        val url = server.url("/v1").toUri().toASCIIString()
         val serviceChecker = ServiceChecker(url, "foobar", Optional.empty(), null)
 
         val removed_one = AwaitValue(serviceChecker.getNewOfflineNodes())
@@ -55,7 +55,7 @@ class ServiceCheckerSpec : FunSpec({
     }
 
     test("getNewOfflineNodes can parse a minimal service") {
-        val url = server.url("/v1").uri().toASCIIString()
+        val url = server.url("/v1").toUri().toASCIIString()
         val serviceChecker = ServiceChecker(url, "foobar-minimal", Optional.empty(), null)
 
         val removed_one = AwaitValue(serviceChecker.getNewOfflineNodes())
@@ -70,7 +70,7 @@ class ServiceCheckerSpec : FunSpec({
     }
 
     test("getNewOfflineNodes throws when an unexpected code is enouctered") {
-        val url = server.url("/v1").uri().toASCIIString()
+        val url = server.url("/v1").toUri().toASCIIString()
         val serviceChecker = ServiceChecker(url, "foobarbaz", Optional.empty(), null)
 
         shouldThrow<IOException> {
@@ -79,7 +79,7 @@ class ServiceCheckerSpec : FunSpec({
     }
 
     test("getNewOfflineNodes throws an exception on not being able to parse an array") {
-        val url = server.url("/v1").uri().toASCIIString()
+        val url = server.url("/v1").toUri().toASCIIString()
         val serviceChecker = ServiceChecker(url, "foobar-obj", Optional.empty(), null)
         val svcChecker = ServiceChecker(url, "foobar-nil", Optional.empty(), null)
 
@@ -92,7 +92,7 @@ class ServiceCheckerSpec : FunSpec({
     }
 
     test("getNewOfflineNodes can timeout") {
-        val url = server.url("/v1").uri().toASCIIString()
+        val url = server.url("/v1").toUri().toASCIIString()
         val serviceChecker = ServiceChecker(url, "foobar-sleep", Optional.empty(), 2L)
 
         shouldThrow<TimeoutException> {
@@ -101,7 +101,7 @@ class ServiceCheckerSpec : FunSpec({
     }
 
     test("it can find the difference between two lists") {
-        val url = server.url("/v1").uri().toASCIIString()
+        val url = server.url("/v1").toUri().toASCIIString()
         val serviceChecker = ServiceChecker(url, "foobar-obj", Optional.empty(), null)
 
         // Test two lists with just added/remove content.

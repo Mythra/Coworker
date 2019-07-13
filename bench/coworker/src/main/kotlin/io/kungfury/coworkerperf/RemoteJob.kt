@@ -28,7 +28,7 @@ class RemoteJob(
                 val client = OkHttpClient()
                 val req = Request.Builder().url("https://google.com").build()
                 val resp = client.newCall(req).execute()
-                System.out.println(resp.body()!!.string())
+                System.out.println(resp.body!!.string())
                 System.out.println(Instant.now().epochSecond)
                 yieldNextStage(connectionManager, Instant.now().plusSeconds(60L))
             }

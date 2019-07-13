@@ -1,3 +1,7 @@
+## 1.2.1 (Unreleased)
+
+* Update dependencies.
+
 ## 1.2.0 (January 11th, 2019)
 
 * Update dependencies.

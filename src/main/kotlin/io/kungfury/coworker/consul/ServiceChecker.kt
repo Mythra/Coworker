@@ -72,14 +72,12 @@ class ServiceChecker(consulUri: String, service: String, consulToken: Optional<S
                 val resp = MakeAsyncRequest(httpClient, request, this)
 
                 if (!resp.isSuccessful) {
-                    throw IOException("Unexpected code from consul ${resp.code()}")
+                    throw IOException("Unexpected code from consul ${resp.code}")
                 }
 
                 val responses = ArrayList<String>()
-                val body = resp.body()
-                if (body == null) {
-                    throw IOException("Expected body back from consul!")
-                }
+                val body = resp.body ?: throw IOException("Expected body back from consul!")
+
                 if (!isActive) {
                     throw TimeoutException("Timeout out waiting for request to succeed.")
                 }
@@ -143,18 +141,18 @@ class ServiceChecker(consulUri: String, service: String, consulToken: Optional<S
         val call = httpClient.newCall(request)
 
         call.enqueue(object : Callback {
-            override fun onFailure(call: Call?, e: IOException?) {
+            override fun onFailure(call: Call, e: IOException) {
                 error = e
                 hasError.set(true)
             }
 
-            override fun onResponse(call: Call?, response: Response) {
+            override fun onResponse(call: Call, response: Response) {
                 resp = response
                 hasSucceeded.set(true)
             }
         })
 
-        while (httpClient.dispatcher().runningCalls().contains(call)) {
+        while (httpClient.dispatcher.runningCalls().contains(call)) {
             if (!scope.isActive) {
                 call.cancel()
                 throw TimeoutException("Timed out waiting for request to succeed.")
