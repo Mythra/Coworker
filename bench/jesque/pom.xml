@@ -148,7 +148,7 @@
                         <configuration>
                             <target name="ktlint">
                                 <java taskname="ktlint" dir="${basedir}" fork="true" failonerror="true"
-                                      classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
+                                      classpathref="maven.plugin.classpath" classname="com.pinterest.ktlint.Main">
                                     <arg value="src/**/*.kt"/>
                                 </java>
                             </target>
@@ -160,7 +160,7 @@
                         <configuration>
                             <target name="ktlint">
                                 <java taskname="ktlint" dir="${basedir}" fork="true" failonerror="true"
-                                      classpathref="maven.plugin.classpath" classname="com.github.shyiko.ktlint.Main">
+                                      classpathref="maven.plugin.classpath" classname="com.pinterest.ktlint.Main">
                                     <arg value="-F"/>
                                     <arg value="src/**/*.kt"/>
                                 </java>
