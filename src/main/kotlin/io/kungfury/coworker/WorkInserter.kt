@@ -34,6 +34,7 @@ object WorkInserter {
      * @param priority
      *  The priority of this piece of work. Defaults to 100.
      */
+    @JvmStatic
     fun InsertWork(
         connectionManager: ConnectionManager,
         workName: String,
@@ -76,6 +77,7 @@ object WorkInserter {
         it -> ObjectOutputStream(it).writeObject(this); it
     }.toByteArray()
 
+    @JvmStatic
     @Throws(IllegalStateException::class)
     fun HandleAsynchronously(
         connectionManager: ConnectionManager,
@@ -110,6 +112,7 @@ object WorkInserter {
         )
     }
 
+    @JvmStatic
     @Throws(java.lang.IllegalStateException::class)
     fun HandleAsynchronouslyJava(
         connectionManager: ConnectionManager,
@@ -142,6 +145,7 @@ object WorkInserter {
         )
     }
 
+    @JvmStatic
     fun InsertBulkWork(
         connectionManager: ConnectionManager,
         workName: String,

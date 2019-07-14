@@ -29,7 +29,8 @@ fi
 set -e
 
 echo "[+] Running Migrations."
-psql "$pg_url" -a -f "$bench_dir/../src/main/resources/migrations/CreateDelayedWork_pg.sql"
+psql "$pg_url" -a -f "$bench_dir/../src/main/resources/migrations/1_CreateDelayedWork_pg.sql"
+psql "$pg_url" -a -f "$bench_dir/../src/main/resources/migrations/2_CreateJobCredit_pg.sql"
 echo "[+] Ran Migrations."
 
 echo "[+] Compiling base coworker"

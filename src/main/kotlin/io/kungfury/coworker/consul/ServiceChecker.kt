@@ -45,16 +45,12 @@ class ServiceChecker(consulUri: String, service: String, consulToken: Optional<S
     /**
      * Grab the host list of the Service Checker.
      */
-    fun getHostList(): ArrayList<String> {
-        return hostList
-    }
+    fun getHostList(): ArrayList<String> = hostList
 
     /**
      * Get the name of the service
      */
-    fun getServiceName(): String {
-        return consulService
-    }
+    fun getServiceName(): String = consulService
 
     /**
      * Get a list of the new offline nodes.
