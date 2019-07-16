@@ -45,10 +45,13 @@ abstract class CreditableJob(
                             " WHERE" +
                             "  strand_name = ?" +
                             " AND" +
-                            "  stage = ?"
+                            "  stage = ?" +
+                            " AND" +
+                            "  job_name = ?"
                     ))
                     statement.setString(1, Strand)
                     statement.setInt(2, Stage)
+                    statement.setString(3, workUniqueName)
 
                     val rs = statement.executeQuery()
                     var rolling_avg: Long = 0
@@ -69,10 +72,13 @@ abstract class CreditableJob(
                             " WHERE" +
                             "  strand_name = ?" +
                             " AND" +
-                            "  stage = ?"
+                            "  stage = ?" +
+                            " AND" +
+                            "  job_name = ?"
                     ))
                     credit_use.setString(1, Strand)
                     credit_use.setInt(2, Stage)
+                    credit_use.setString(3, workUniqueName)
 
                     val credit_use_rs = credit_use.executeQuery()
                     if (rs.next()) {
@@ -98,31 +104,35 @@ abstract class CreditableJob(
                             " WHERE" +
                             "  strand_name = ?" +
                             " AND" +
-                            "  stage = ?"
+                            "  stage = ?" +
+                            " AND" +
+                            "  job_name = ?"
                     ))
                     update_in_use_ps.setLong(1, rolling_avg)
                     update_in_use_ps.setString(2, Strand)
                     update_in_use_ps.setInt(3, Stage)
+                    update_in_use_ps.setString(4, workUniqueName)
 
                     update_in_use_ps.execute()
 
                     val update_avg = conn.prepareStatement(Marginalia.AddMarginalia(
                         "CreditableJob_UpdateAvgs",
                         "INSERT INTO" +
-                            "  public.delayed_work_credits(strand_name, stage, rolling_average_seconds, total_jobs)" +
+                            "  public.delayed_work_credits(job_name, strand_name, stage, rolling_average_seconds, total_jobs)" +
                             " VALUES" +
-                            "  (?, ?, ?, ?)" +
-                            " ON CONFLICT(strand_name, stage)" +
+                            "  (?, ?, ?, ?, ?)" +
+                            " ON CONFLICT(job_name, strand_name, stage)" +
                             " DO UPDATE SET" +
                             "  rolling_average_seconds = ?," +
                             "  total_jobs = ?"
                     ))
-                    update_avg.setString(1, Strand)
-                    update_avg.setInt(2, Stage)
-                    update_avg.setLong(3, newAvg)
-                    update_avg.setLong(4, newJobCount)
-                    update_avg.setLong(5, newAvg)
-                    update_avg.setLong(6, newJobCount)
+                    update_avg.setString(1, workUniqueName)
+                    update_avg.setString(2, Strand)
+                    update_avg.setInt(3, Stage)
+                    update_avg.setLong(4, newAvg)
+                    update_avg.setLong(5, newJobCount)
+                    update_avg.setLong(6, newAvg)
+                    update_avg.setLong(7, newJobCount)
                     update_avg.execute()
                 }
             }
@@ -148,16 +158,18 @@ abstract class CreditableJob(
                         val ps = conn.prepareStatement(Marginalia.AddMarginalia(
                             "CreditableJob_UpdateInUse",
                             "INSERT INTO" +
-                                "  public.delayed_work_credit_use(strand_name, in_use)" +
+                                "  public.delayed_work_credit_use(job_name, strand_name, stage, in_use)" +
                                 " VALUES" +
-                                "  (?, ?)" +
-                                " ON CONFLICT(strand_name)" +
+                                "  (?, ?, ?, ?)" +
+                                " ON CONFLICT(job_name, strand_name, stage)" +
                                 " DO UPDATE SET " +
                                 "  in_use = delayed_work_credit_use.in_use + ?"
                         ))
-                        ps.setString(1, Strand)
-                        ps.setLong(2, jobState.rolling_avg)
-                        ps.setLong(3, jobState.rolling_avg)
+                        ps.setString(1, workUniqueName)
+                        ps.setString(2, Strand)
+                        ps.setInt(3, Stage)
+                        ps.setLong(4, jobState.rolling_avg)
+                        ps.setLong(5, jobState.rolling_avg)
 
                         ps.execute()
                     }
