@@ -42,11 +42,7 @@ object NetworkUtils {
             }
             // At this point we did not find a non-loopback addr.
             // Fall back to returning whatever Inet.getLocalHost() returns.
-            val jdkSuppliedAddr = InetAddress.getLocalHost()
-            if (jdkSuppliedAddr == null) {
-                throw UnknownHostException("The JDK InetAddress.getLocalHost() method unexpectedly returned null.")
-            }
-            return jdkSuppliedAddr
+            return InetAddress.getLocalHost() ?: throw UnknownHostException("The JDK InetAddress.getLocalHost() method unexpectedly returned null.")
         } catch (exception: Exception) {
             val unknownHostException = UnknownHostException("Failed to determine LAN Address: $exception")
             unknownHostException.initCause(exception)

@@ -2,7 +2,6 @@ package io.kungfury.coworker
 
 import io.kungfury.coworker.dbs.ConnectionManager
 import io.kungfury.coworker.dbs.ConnectionType
-import io.kungfury.coworker.dbs.Marginalia
 import io.kungfury.coworker.dbs.Marginalia.AddMarginalia
 import io.kungfury.coworker.utils.NetworkUtils
 
@@ -56,7 +55,7 @@ interface DelayedKotlinWork {
      *  yieldStage should be called when "part" of a piece of work is done, but not all of it.
      * </p>
      */
-    suspend fun yieldStage(connectionManager: ConnectionManager, stage: Int, instant: Instant = Instant.now()) {
+    suspend fun yieldStage(connectionManager: ConnectionManager, stage: Int, runAt: Instant = Instant.now()) {
         val stateToSerialize = this.serializeState()
 
         when (connectionManager.CONNECTION_TYPE) {
@@ -66,15 +65,15 @@ interface DelayedKotlinWork {
                         "DelayedKotlinWork_yieldNext",
                         "UPDATE public.delayed_work SET run_at = ?, stage = ?, state = ?, locked_by = NULL WHERE id = ?"
                     ))
-                    statement.setTimestamp(1, Timestamp.from(instant))
+                    statement.setTimestamp(1, Timestamp.from(runAt))
                     statement.setInt(2, stage)
                     statement.setString(3, stateToSerialize)
                     statement.setLong(4, this.Id)
                     statement.execute()
 
-                    connection.createStatement().execute(Marginalia.AddMarginalia(
+                    connection.createStatement().execute(AddMarginalia(
                         "DelayedKotlinWork_yieldStage_notify",
-                        String.format("NOTIFY workers, '%s'", "$Id;$Priority;${instant.epochSecond};$stage;${this.Strand}"))
+                        String.format("NOTIFY workers, '%s'", "$Id;$Priority;${runAt.epochSecond};$stage;${this.Strand}"))
                     )
 
                     true
@@ -96,8 +95,8 @@ interface DelayedKotlinWork {
      *  This increments the stage by one so when the next part is run it's "progressed".
      * </p>
      */
-    suspend fun yieldNextStage(connectionManager: ConnectionManager, instant: Instant = Instant.now()) =
-        yieldStage(connectionManager, this.Stage + 1, instant = instant)
+    suspend fun yieldNextStage(connectionManager: ConnectionManager, runAt: Instant = Instant.now()) =
+        yieldStage(connectionManager, this.Stage + 1, runAt = runAt)
 
     /**
      * Yields the piece of work to higher priority work, not progressing the stage of this work.
@@ -113,8 +112,8 @@ interface DelayedKotlinWork {
      *     but yield to any higher priority work before you retry.
      * </p>
      */
-    suspend fun yieldCurrentStage(connectionManager: ConnectionManager, instant: Instant = Instant.now()) =
-        yieldStage(connectionManager, this.Stage, instant = instant)
+    suspend fun yieldCurrentStage(connectionManager: ConnectionManager, runAt: Instant = Instant.now()) =
+        yieldStage(connectionManager, this.Stage, runAt = runAt)
 
     /**
      * Finish the piece of work, mark it as completed.

@@ -6,10 +6,15 @@ import io.kungfury.coworker.BackgroundKotlinWork
 import io.kungfury.coworker.WorkGarbage
 import io.kungfury.coworker.dbs.ConnectionManager
 import io.kungfury.coworker.internal.states.HandleAsyncFunctorState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 import java.io.ObjectInputStream
 import java.util.function.Function
 
+/**
+ * Run an asynchronous function.
+ */
 class AsyncFunctorRunner(
     private val connectionManager: ConnectionManager,
     garbageHeap: WorkGarbage,
@@ -28,7 +33,9 @@ class AsyncFunctorRunner(
     override suspend fun Work(state: String) {
         internalState = state
         try {
-            val parsed: HandleAsyncFunctorState = JsonIterator.parse(internalState).read(HandleAsyncFunctorState::class.java)
+            val parsed: HandleAsyncFunctorState = withContext(Dispatchers.IO) {
+                JsonIterator.parse(internalState).read(HandleAsyncFunctorState::class.java)
+            }
             val serializedFunctor = parsed.methodState.serializedClosure
 
             if (!parsed.isJava) {
@@ -40,6 +47,7 @@ class AsyncFunctorRunner(
                 // returns null
                 @Suppress("UNUSED_VARIABLE") var any: Any? = func.apply(parsed.args)
             }
+
             finishWork()
         } catch (err: Exception) {
             failWork(

@@ -14,15 +14,9 @@ import io.micrometer.core.instrument.Tag
 import io.micrometer.core.instrument.Tags
 import io.micrometer.core.instrument.Timer
 
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
 
 import org.postgresql.PGConnection
 
@@ -114,7 +108,11 @@ class PgConnectionManager : ConnectionManager {
     }
 
     override val TIMEOUT_MS
-        get() = if (timeoutLong == null) { 300000L } else { timeoutLong }
+        get() = if (timeoutLong == null) {
+            300000L
+        } else {
+            timeoutLong
+        }
     override val CONNECTION_TYPE: ConnectionType = ConnectionType.POSTGRES
 
     @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class)
@@ -215,7 +213,7 @@ class PgConnectionManager : ConnectionManager {
         val failureGauge = this.metricRegistry.gauge("coworker.listen.failure_gauge", Tags.of(Tag.of("channel", channel)), 0)
 
         return GlobalScope.produce {
-            CoroutineName("PostgresListen( $channel )")
+            CoroutineName("PostgresListen($channel)")
 
             // So all in all this is subpar.
             //
@@ -266,9 +264,13 @@ class PgConnectionManager : ConnectionManager {
 
                         conn.notifications?.forEach { pgNotification ->
                             if (pgNotification.name.equals(channel)) {
-                                send(pgNotification.parameter)
+                                val param: String? = pgNotification.parameter
+                                if (param != null) {
+                                    send(param)
+                                }
                             }
                         }
+
                         if (counter > 0) {
                             failureGauge?.dec()
                             counter--
@@ -279,7 +281,8 @@ class PgConnectionManager : ConnectionManager {
                         failureGauge?.inc()
                         counter++
                     }
-                    Thread.sleep(500)
+
+                    delay(500)
                 }
             } catch (err: Exception) {
                 LOGGER.error("Failed to setup listen channel, or listen channel has thrown unknown exception.\n" +

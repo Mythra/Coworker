@@ -8,8 +8,10 @@ import io.kungfury.coworker.dbs.Marginalia
 import io.kungfury.coworker.dbs.TextSafety
 import io.kungfury.coworker.internal.states.DelayedLambdaState
 import io.kungfury.coworker.internal.states.HandleAsyncFunctorState
+import kotlinx.coroutines.Dispatchers
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 import java.io.ByteArrayOutputStream
 import java.io.ObjectOutputStream
@@ -158,29 +160,31 @@ object WorkInserter {
         runBlocking {
             when (connectionManager.CONNECTION_TYPE) {
                 ConnectionType.POSTGRES -> {
-                    connectionManager.executeTransaction { connection ->
-                        val purifiedStrand = TextSafety.EnforceStringPurity(strand, true)
-                        val statement = connection.prepareStatement(Marginalia.AddMarginalia(
-                            "WorkInserter_InsertBulkWork",
-                            "INSERT INTO public.delayed_work (created_at, run_at, stage, strand, priority, work_unique_name, state) VALUES (current_timestamp, ?, 1, ?, ?, ?, ?) RETURNING id"
-                        ))
-                        statement.setTimestamp(1, Timestamp.from(runAt))
-                        statement.setString(2, strand)
-                        statement.setInt(3, priority)
-                        statement.setString(4, workName)
-                        statement.setString(5, workState)
-                        for (idx in 1..count) {
-                            val rs = statement.executeQuery()
-                            rs.next()
-                            val id = rs.getLong(1)
-
-                            connection.createStatement().execute(Marginalia.AddMarginalia(
-                                "WorkInserter_BulkNotify",
-                                String.format("NOTIFY workers, '%s'", "$id;$priority;${runAt.epochSecond};1;$purifiedStrand")
+                    withContext(Dispatchers.IO) {
+                        connectionManager.executeTransaction { connection ->
+                            val purifiedStrand = TextSafety.EnforceStringPurity(strand, true)
+                            val statement = connection.prepareStatement(Marginalia.AddMarginalia(
+                                "WorkInserter_InsertBulkWork",
+                                "INSERT INTO public.delayed_work (created_at, run_at, stage, strand, priority, work_unique_name, state) VALUES (current_timestamp, ?, 1, ?, ?, ?, ?) RETURNING id"
                             ))
-                        }
+                            statement.setTimestamp(1, Timestamp.from(runAt))
+                            statement.setString(2, strand)
+                            statement.setInt(3, priority)
+                            statement.setString(4, workName)
+                            statement.setString(5, workState)
+                            for (idx in 1..count) {
+                                val rs = statement.executeQuery()
+                                rs.next()
+                                val id = rs.getLong(1)
 
-                        connection.commit()
+                                connection.createStatement().execute(Marginalia.AddMarginalia(
+                                    "WorkInserter_BulkNotify",
+                                    String.format("NOTIFY workers, '%s'", "$id;$priority;${runAt.epochSecond};1;$purifiedStrand")
+                                ))
+                            }
+
+                            connection.commit()
+                        }
                     }
                 }
             }

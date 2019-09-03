@@ -4,10 +4,7 @@ import io.kungfury.coworker.dbs.ConnectionManager
 import io.kungfury.coworker.dbs.ConnectionType
 import io.kungfury.coworker.dbs.Marginalia
 import io.kungfury.coworker.internal.states.CreditableJobState
-
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 import java.time.Instant
 
@@ -34,58 +31,60 @@ abstract class CreditableJob(
     private suspend fun GetWorkCredit(): CreditableJobState {
         return when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {
-                connectionManager.executeTransaction { conn ->
-                    val statement = conn.prepareStatement(Marginalia.AddMarginalia(
-                        "CreditableJob_SelectCredits",
-                        "SELECT" +
-                            "  rolling_average_seconds," +
-                            "  total_jobs" +
-                            " FROM" +
-                            "  public.delayed_work_credits" +
-                            " WHERE" +
-                            "  strand_name = ?" +
-                            " AND" +
-                            "  stage = ?" +
-                            " AND" +
-                            "  job_name = ?"
-                    ))
-                    statement.setString(1, Strand)
-                    statement.setInt(2, Stage)
-                    statement.setString(3, workUniqueName)
+                withContext(Dispatchers.IO) {
+                    connectionManager.executeTransaction { conn ->
+                        val statement = conn.prepareStatement(Marginalia.AddMarginalia(
+                            "CreditableJob_SelectCredits",
+                            "SELECT" +
+                                "  rolling_average_seconds," +
+                                "  total_jobs" +
+                                " FROM" +
+                                "  public.delayed_work_credits" +
+                                " WHERE" +
+                                "  strand_name = ?" +
+                                " AND" +
+                                "  stage = ?" +
+                                " AND" +
+                                "  job_name = ?"
+                        ))
+                        statement.setString(1, Strand)
+                        statement.setInt(2, Stage)
+                        statement.setString(3, workUniqueName)
 
-                    val rs = statement.executeQuery()
-                    var rolling_avg: Long = 0
-                    var total_jobs: Long = 0
+                        val rs = statement.executeQuery()
+                        var rolling_avg: Long = 0
+                        var total_jobs: Long = 0
 
-                    if (rs.next()) {
-                        rolling_avg = rs.getLong("rolling_average_seconds")
-                        total_jobs = rs.getLong("total_jobs")
+                        if (rs.next()) {
+                            rolling_avg = rs.getLong("rolling_average_seconds")
+                            total_jobs = rs.getLong("total_jobs")
+                        }
+
+                        var in_use: Long = 0
+                        val credit_use = conn.prepareStatement(Marginalia.AddMarginalia(
+                            "CreditableJob_InUseCount",
+                            "SELECT" +
+                                "  in_use" +
+                                " FROM" +
+                                "  public.delayed_work_credit_use" +
+                                " WHERE" +
+                                "  strand_name = ?" +
+                                " AND" +
+                                "  stage = ?" +
+                                " AND" +
+                                "  job_name = ?"
+                        ))
+                        credit_use.setString(1, Strand)
+                        credit_use.setInt(2, Stage)
+                        credit_use.setString(3, workUniqueName)
+
+                        val credit_use_rs = credit_use.executeQuery()
+                        if (credit_use_rs.next()) {
+                            in_use = credit_use_rs.getLong("in_use")
+                        }
+
+                        return@executeTransaction CreditableJobState(rolling_avg, total_jobs, in_use)
                     }
-
-                    var in_use: Long = 0
-                    val credit_use = conn.prepareStatement(Marginalia.AddMarginalia(
-                        "CreditableJob_InUseCount",
-                        "SELECT" +
-                            "  in_use" +
-                            " FROM" +
-                            "  public.delayed_work_credit_use" +
-                            " WHERE" +
-                            "  strand_name = ?" +
-                            " AND" +
-                            "  stage = ?" +
-                            " AND" +
-                            "  job_name = ?"
-                    ))
-                    credit_use.setString(1, Strand)
-                    credit_use.setInt(2, Stage)
-                    credit_use.setString(3, workUniqueName)
-
-                    val credit_use_rs = credit_use.executeQuery()
-                    if (rs.next()) {
-                        in_use = rs.getLong("in_use")
-                    }
-
-                    return@executeTransaction CreditableJobState(rolling_avg, total_jobs, in_use)
                 }
             }
         }
@@ -94,46 +93,48 @@ abstract class CreditableJob(
     private suspend fun UpdateCredits(rolling_avg: Long, newAvg: Long, newJobCount: Long) {
         when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {
-                connectionManager.executeTransaction { conn ->
-                    val update_in_use_ps = conn.prepareStatement(Marginalia.AddMarginalia(
-                        "CreditableJob_UpdateInUse",
-                        "UPDATE" +
-                            "  public.delayed_work_credit_use" +
-                            " SET" +
-                            "  in_use = GREATEST(delayed_work_credit_use.in_use - ?, 0)" +
-                            " WHERE" +
-                            "  strand_name = ?" +
-                            " AND" +
-                            "  stage = ?" +
-                            " AND" +
-                            "  job_name = ?"
-                    ))
-                    update_in_use_ps.setLong(1, rolling_avg)
-                    update_in_use_ps.setString(2, Strand)
-                    update_in_use_ps.setInt(3, Stage)
-                    update_in_use_ps.setString(4, workUniqueName)
+                withContext(Dispatchers.IO) {
+                    connectionManager.executeTransaction { conn ->
+                        val update_in_use_ps = conn.prepareStatement(Marginalia.AddMarginalia(
+                            "CreditableJob_UpdateInUse",
+                            "UPDATE" +
+                                "  public.delayed_work_credit_use" +
+                                " SET" +
+                                "  in_use = GREATEST(delayed_work_credit_use.in_use - ?, 0)" +
+                                " WHERE" +
+                                "  strand_name = ?" +
+                                " AND" +
+                                "  stage = ?" +
+                                " AND" +
+                                "  job_name = ?"
+                        ))
+                        update_in_use_ps.setLong(1, rolling_avg)
+                        update_in_use_ps.setString(2, Strand)
+                        update_in_use_ps.setInt(3, Stage)
+                        update_in_use_ps.setString(4, workUniqueName)
 
-                    update_in_use_ps.execute()
+                        update_in_use_ps.execute()
 
-                    val update_avg = conn.prepareStatement(Marginalia.AddMarginalia(
-                        "CreditableJob_UpdateAvgs",
-                        "INSERT INTO" +
-                            "  public.delayed_work_credits(job_name, strand_name, stage, rolling_average_seconds, total_jobs)" +
-                            " VALUES" +
-                            "  (?, ?, ?, ?, ?)" +
-                            " ON CONFLICT(job_name, strand_name, stage)" +
-                            " DO UPDATE SET" +
-                            "  rolling_average_seconds = ?," +
-                            "  total_jobs = ?"
-                    ))
-                    update_avg.setString(1, workUniqueName)
-                    update_avg.setString(2, Strand)
-                    update_avg.setInt(3, Stage)
-                    update_avg.setLong(4, newAvg)
-                    update_avg.setLong(5, newJobCount)
-                    update_avg.setLong(6, newAvg)
-                    update_avg.setLong(7, newJobCount)
-                    update_avg.execute()
+                        val update_avg = conn.prepareStatement(Marginalia.AddMarginalia(
+                            "CreditableJob_UpdateAvgs",
+                            "INSERT INTO" +
+                                "  public.delayed_work_credits(job_name, strand_name, stage, rolling_average_seconds, total_jobs)" +
+                                " VALUES" +
+                                "  (?, ?, ?, ?, ?)" +
+                                " ON CONFLICT(job_name, strand_name, stage)" +
+                                " DO UPDATE SET" +
+                                "  rolling_average_seconds = ?," +
+                                "  total_jobs = ?"
+                        ))
+                        update_avg.setString(1, workUniqueName)
+                        update_avg.setString(2, Strand)
+                        update_avg.setInt(3, Stage)
+                        update_avg.setLong(4, newAvg)
+                        update_avg.setLong(5, newJobCount)
+                        update_avg.setLong(6, newAvg)
+                        update_avg.setLong(7, newJobCount)
+                        update_avg.execute()
+                    }
                 }
             }
         }
@@ -154,24 +155,26 @@ abstract class CreditableJob(
 
             when (connectionManager.CONNECTION_TYPE) {
                 ConnectionType.POSTGRES -> {
-                    connectionManager.executeTransaction { conn ->
-                        val ps = conn.prepareStatement(Marginalia.AddMarginalia(
-                            "CreditableJob_UpdateInUse",
-                            "INSERT INTO" +
-                                "  public.delayed_work_credit_use(job_name, strand_name, stage, in_use)" +
-                                " VALUES" +
-                                "  (?, ?, ?, ?)" +
-                                " ON CONFLICT(job_name, strand_name, stage)" +
-                                " DO UPDATE SET " +
-                                "  in_use = delayed_work_credit_use.in_use + ?"
-                        ))
-                        ps.setString(1, workUniqueName)
-                        ps.setString(2, Strand)
-                        ps.setInt(3, Stage)
-                        ps.setLong(4, jobState.rolling_avg)
-                        ps.setLong(5, jobState.rolling_avg)
+                    withContext(Dispatchers.IO) {
+                        connectionManager.executeTransaction { conn ->
+                            val ps = conn.prepareStatement(Marginalia.AddMarginalia(
+                                "CreditableJob_UpdateInUse",
+                                "INSERT INTO" +
+                                    "  public.delayed_work_credit_use(job_name, strand_name, stage, in_use)" +
+                                    " VALUES" +
+                                    "  (?, ?, ?, ?)" +
+                                    " ON CONFLICT(job_name, strand_name, stage)" +
+                                    " DO UPDATE SET " +
+                                    "  in_use = delayed_work_credit_use.in_use + ?"
+                            ))
+                            ps.setString(1, workUniqueName)
+                            ps.setString(2, Strand)
+                            ps.setInt(3, Stage)
+                            ps.setLong(4, jobState.rolling_avg)
+                            ps.setLong(5, jobState.rolling_avg)
 
-                        ps.execute()
+                            ps.execute()
+                        }
                     }
                 }
             }

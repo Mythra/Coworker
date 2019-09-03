@@ -6,7 +6,6 @@ import java.time.temporal.TemporalAmount
 /**
  * A static configuration input that never changes.
  */
-@UseExperimental(ExperimentalUnsignedTypes::class)
 class StaticCoworkerConfigurationInput(
     private val checkWorkEvery: TemporalAmount,
     nstrand: Map<String, Int>,

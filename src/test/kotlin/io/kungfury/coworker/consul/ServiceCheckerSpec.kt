@@ -4,6 +4,7 @@ import com.jsoniter.spi.JsonException
 
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
+import io.kotlintest.shouldThrowAny
 import io.kotlintest.specs.FunSpec
 import io.kungfury.coworker.AwaitValue
 
@@ -15,7 +16,6 @@ import okhttp3.mockwebserver.RecordedRequest
 import java.io.IOException
 import java.util.Optional
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 
 class ServiceCheckerSpec : FunSpec({
     val dispatcher: Dispatcher = object : Dispatcher() {
@@ -93,9 +93,9 @@ class ServiceCheckerSpec : FunSpec({
 
     test("getNewOfflineNodes can timeout") {
         val url = server.url("/v1").toUri().toASCIIString()
-        val serviceChecker = ServiceChecker(url, "foobar-sleep", Optional.empty(), 2L)
+        val serviceChecker = ServiceChecker(url, "foobar-sleep", Optional.empty(), 1L)
 
-        shouldThrow<TimeoutException> {
+        shouldThrowAny {
             AwaitValue(serviceChecker.getNewOfflineNodes())
         }
     }

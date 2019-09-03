@@ -15,9 +15,11 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
 import io.micrometer.core.instrument.Tags
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 import org.slf4j.LoggerFactory
 
@@ -54,12 +56,8 @@ class CoworkerManager(
     registry: MeterRegistry?,
     private val configurationInput: CoworkerConfigurationInput
 ) {
-    private val LOGGER = LoggerFactory.getLogger(CoworkerManager::class.java)
-    private val metricRegistry: MeterRegistry = if (registry == null) {
-        Metrics.globalRegistry
-    } else {
-        registry
-    }
+    private val logger = LoggerFactory.getLogger(CoworkerManager::class.java)
+    private val metricRegistry: MeterRegistry = registry ?: Metrics.globalRegistry
 
     private val nThreads = if (threads < 1) { 1 } else { threads }
     private val executorService = Executors.newFixedThreadPool(nThreads)
@@ -81,7 +79,7 @@ class CoworkerManager(
     private val networkAddr: String = NetworkUtils.getLocalHostLANAddress().hostAddress
 
     // The parameter size used for calling constructors.
-    private val PARAMETER_SIZE = 6
+    private val classParamLengthRequirement = 6
 
     /**
      * Starts this Coworker manager.
@@ -89,7 +87,7 @@ class CoworkerManager(
      * NOTE: This will hijack the main thread as the "Master Process" queues threads underneath it.
      */
     fun Start() {
-        LOGGER.info("Starting Coworker Manager...")
+        logger.info("Starting Coworker Manager...")
 
         Runtime.getRuntime().addShutdownHook(Thread {
             cleanupRuns.increment()
@@ -97,20 +95,28 @@ class CoworkerManager(
         })
 
         // Cleanup any work left behind by restart.
-        runBlocking { ReleaseToPoolForHosts(listOf(networkAddr)) }
+        runBlocking {
+            withContext(Dispatchers.IO) {
+                ReleaseToPoolForHosts(listOf(networkAddr))
+            }
+        }
 
         thread(name = "CleanupThread") {
             while (true) {
-                LOGGER.info("Checking if we should cleanup.")
+                logger.info("Checking if we should cleanup.")
                 if (garbageHeap.ShouldCleanup()) {
-                    LOGGER.info("We should Cleanup.")
+                    logger.info("We should Cleanup.")
                     cleanupRuns.increment()
                     runBlocking { garbageHeap.Cleanup(connectionManager) }
                 }
                 if (serviceChecker != null) {
                     val newOfflineNodes = runBlocking { serviceChecker.getNewOfflineNodes().await() }
                     if (newOfflineNodes.isNotEmpty()) {
-                        runBlocking { ReleaseToPoolForHosts(newOfflineNodes) }
+                        runBlocking {
+                            withContext(Dispatchers.IO) {
+                                ReleaseToPoolForHosts(newOfflineNodes)
+                            }
+                        }
                     }
                 }
                 Thread.sleep(1000)
@@ -136,8 +142,8 @@ class CoworkerManager(
                     if (isKotlin) {
                         val constructor = kclazz.primaryConstructor
 
-                        if (constructor == null || constructor.parameters.size != PARAMETER_SIZE) {
-                            throw IllegalStateException("KClass Constructor for: ${foundWork.workUniqueName} does not accept $PARAMETER_SIZE params.")
+                        if (constructor == null || constructor.parameters.size != classParamLengthRequirement) {
+                            throw IllegalStateException("KClass Constructor for: ${foundWork.workUniqueName} does not accept $classParamLengthRequirement params.")
                         }
 
                         val work = constructor.call(
@@ -158,16 +164,14 @@ class CoworkerManager(
                             throw IllegalStateException("Work for class: ${foundWork.workUniqueName} is not an instance of DelayedJavaWork!")
                         }
                         var constructor: Constructor<*>? = null
-                        for (constru in clazz.declaredConstructors) {
-                            if (constru.parameters.size == PARAMETER_SIZE) {
-                                constructor = constru
+                        for (possibleConstructor in clazz.declaredConstructors) {
+                            if (possibleConstructor.parameters.size == classParamLengthRequirement) {
+                                constructor = possibleConstructor
                                 break
                             }
                         }
 
-                        if (constructor == null) {
-                            throw IllegalStateException("Failed to find constructor with proper arg length!")
-                        }
+                        checkNotNull(constructor) { "Failed to find constructor with proper arg length!" }
 
                         val work = constructor.newInstance(
                             connectionManager,
@@ -183,11 +187,16 @@ class CoworkerManager(
                         futureWorkMap[future.hashCode()] = foundWork.workId
                     }
                 } catch (classNotFound: ClassNotFoundException) {
-                    LOGGER.warn("Failed to find class: [ ${foundWork.workUniqueName} ]! Passing on it, since it might be for a different language.")
+                    logger.warn("Failed to find class: [ ${foundWork.workUniqueName} ]! Passing on it, since it might be for a different language.")
                     workNotifiedAbout.removeIf { it.Id == foundWork.workId }
                 } catch (exc: Exception) {
-                    LOGGER.error("Failed to find, and call constructor for: [ ${foundWork.workUniqueName} ] Exception: [ $exc ].")
-                    runBlocking { FailWork(foundWork.workId, foundWork.workUniqueName, "${exc.localizedMessage}\n  ${exc.stackTrace.joinToString("\n  ")}") }
+                    logger.error("Failed to find, and call constructor for: [ ${foundWork.workUniqueName} ] Exception: [ $exc ].")
+
+                    runBlocking {
+                        withContext(Dispatchers.IO) {
+                            FailWork(foundWork.workId, foundWork.workUniqueName, "${exc.localizedMessage}\n  ${exc.stackTrace.joinToString("\n  ")}")
+                        }
+                    }
                 }
             }
         }
@@ -203,20 +212,24 @@ class CoworkerManager(
                     val workId = futureWorkMap[future.hashCode()]!!
                     if (future.isCancelled) {
                         try {
-                            runBlocking { ReleaseToPool(workId) }
-                        } catch (exc: Exception) {
-                            LOGGER.error("Failed to release cancelled $workId back to the free pool! Will try again.")
-                            return@retainAll true
-                        }
-                        LOGGER.info("Released cancelled $workId back to the free pool since it was cancelled.")
-                    } else {
-                        try {
-                            val isWorkLocked = runBlocking { IsWorkLocked(workId) }
-                            if (isWorkLocked && !garbageHeap.isScheduledForDelete(workId)) {
-                                runBlocking { ReleaseToPool(workId) }
+                            runBlocking {
+                                withContext(Dispatchers.IO) {
+                                    ReleaseToPool(workId)
+                                }
                             }
                         } catch (exc: Exception) {
-                            LOGGER.error("Failed to check if work exited cleanly and remove if it didn't! [ $exc ]")
+                            logger.error("Failed to release cancelled $workId back to the free pool! Will try again.")
+                            return@retainAll true
+                        }
+                        logger.info("Released cancelled $workId back to the free pool since it was cancelled.")
+                    } else {
+                        try {
+                            val isWorkLocked = runBlocking { withContext(Dispatchers.IO) { IsWorkLocked(workId) } }
+                            if (isWorkLocked && !garbageHeap.isScheduledForDelete(workId)) {
+                                runBlocking { withContext(Dispatchers.IO) { ReleaseToPool(workId) } }
+                            }
+                        } catch (exc: Exception) {
+                            logger.error("Failed to check if work exited cleanly and remove if it didn't! [ $exc ]")
                             return@retainAll true
                         }
                     }
@@ -238,13 +251,13 @@ class CoworkerManager(
                 listened = connectionManager.listenToChannel("workers")
             }
         } catch (exc: Exception) {
-            LOGGER.error("Failed to refresh notification connection due to: $exc")
+            logger.error("Failed to refresh notification connection due to: $exc")
             return
         }
 
         var polled = listened.poll()
         while (polled != null) {
-            LOGGER.debug("Found polled event: $polled")
+            logger.debug("Found polled event: $polled")
             try {
                 val split = polled.split(";")
                 if (split.size != 5) {
@@ -260,7 +273,7 @@ class CoworkerManager(
 
                 workNotifiedAbout.add(parsed)
             } catch (exc: Exception) {
-                LOGGER.error("Failed to process notifications from postgres: $exc")
+                logger.error("Failed to process notifications from postgres: $exc")
             }
             polled = listened.poll()
         }
@@ -272,7 +285,7 @@ class CoworkerManager(
     private fun FindHeadlessWork() {
         val thisInstant = Instant.now()
         if (thisInstant.epochSecond > nextCalculatedCheck) {
-            LOGGER.info("Checking for work that was orphaned.")
+            logger.info("Checking for work that was orphaned.")
             try {
                 runBlocking {
                     when (connectionManager.CONNECTION_TYPE) {
@@ -322,10 +335,10 @@ class CoworkerManager(
                 nextCalculatedCheck = thisInstant.plus(configurationInput.getWorkCheckDelay()).epochSecond
                 lastCheckedWork = thisInstant
             } catch (exc: Exception) {
-                LOGGER.error("Failed to check for orphaned work: [ $exc ].")
+                logger.error("Failed to check for orphaned work: [ $exc ].")
             }
         } else {
-            LOGGER.info("Won't check for headless work in the DB since we checked recently.")
+            logger.info("Won't check for headless work in the DB since we checked recently.")
         }
     }
 
@@ -348,30 +361,30 @@ class CoworkerManager(
                     // We haven't hit run at yet.
                     continue
                 }
-                val lockWorkResult = runBlocking { AttemptLockWork(work.Id) }
+                val lockWorkResult = runBlocking { withContext(Dispatchers.IO) { AttemptLockWork(work.Id) } }
                 if (lockWorkResult.first) {
-                    val isAtMax = runBlocking { ValidateNStrand(work.Strand) }
+                    val isAtMax = runBlocking { withContext(Dispatchers.IO) { ValidateNStrand(work.Strand) } }
                     if (!isAtMax) {
                         lockedToRemove = work
                         locked = lockWorkResult.second
                         break
                     } else {
-                        runBlocking { ReleaseToPool(work.Id) }
+                        runBlocking { withContext(Dispatchers.IO) { ReleaseToPool(work.Id) } }
                     }
                 }
             }
 
             if (locked == null) {
-                LOGGER.info("Failed to find work to work that wasn't already picked up!")
+                logger.info("Failed to find work to work that wasn't already picked up!")
             } else {
                 workNotifiedAbout.remove(lockedToRemove)
                 return locked
             }
         } catch (exc: Exception) {
-            LOGGER.error("Failed to find, and lock work: [ $exc ]!\n  ${exc.stackTrace.joinToString("\n  ")}")
+            logger.error("Failed to find, and lock work: [ $exc ]!\n  ${exc.stackTrace.joinToString("\n  ")}")
         }
 
-        LOGGER.info("Failed to find any work to work!")
+        logger.info("Failed to find any work to work!")
         return null
     }
 
@@ -385,7 +398,7 @@ class CoworkerManager(
      */
     @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun AttemptLockWork(id: Long): Pair<Boolean, DescribedWork?> {
-        LOGGER.info("AttemptLockWork called for $id")
+        logger.info("AttemptLockWork called for $id")
 
         when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {
@@ -431,8 +444,6 @@ class CoworkerManager(
      *
      * @param strand
      *  The strand of the work to check.
-     * @param checkEquals
-     *  Check if the count is currently over, or is just at the max capacity.
      */
     @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun ValidateNStrand(strand: String): Boolean {
@@ -477,7 +488,7 @@ class CoworkerManager(
 
     @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun ReleaseToPoolForHosts(list: List<String>) {
-        LOGGER.info("ReleaseToPoolForHosts called with: [ ${list.joinToString(",")} ].")
+        logger.info("ReleaseToPoolForHosts called with: [ ${list.joinToString(",")} ].")
 
         when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {
@@ -503,7 +514,7 @@ class CoworkerManager(
      */
     @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun ReleaseToPool(id: Long): Boolean {
-        LOGGER.info("ReleaseToPool called for $id")
+        logger.info("ReleaseToPool called for $id")
 
         when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {
@@ -529,7 +540,7 @@ class CoworkerManager(
      */
     @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun IsWorkLocked(id: Long): Boolean {
-        LOGGER.info("IsWorkLocked called for $id")
+        logger.info("IsWorkLocked called for $id")
 
         when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {
@@ -560,7 +571,7 @@ class CoworkerManager(
      */
     @Throws(TimeoutException::class, IOException::class, IllegalStateException::class)
     private suspend fun FailWork(id: Long, workName: String, failureReason: String) {
-        LOGGER.info("FailWork called for $id")
+        logger.info("FailWork called for $id")
 
         when (connectionManager.CONNECTION_TYPE) {
             ConnectionType.POSTGRES -> {

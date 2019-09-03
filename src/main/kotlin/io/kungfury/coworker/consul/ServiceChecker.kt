@@ -3,13 +3,7 @@ package io.kungfury.coworker.consul
 import com.jsoniter.JsonIterator
 import com.jsoniter.spi.JsonException
 
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.*
 
 import okhttp3.Call
 import okhttp3.Callback
@@ -38,7 +32,7 @@ class ServiceChecker(consulUri: String, service: String, consulToken: Optional<S
         .Builder()
         .build()
     // Default timeout is 5 minutes.
-    val consulTimeoutMs = if (timeout == null) { 300000L } else { timeout }
+    val consulTimeoutMs = timeout ?: 300000L
 
     private var hostList = ArrayList<String>()
 
@@ -84,15 +78,17 @@ class ServiceChecker(consulUri: String, service: String, consulToken: Optional<S
 
                 val parser = JsonIterator.parse(byteStream)
 
-                while (parser.readArray()) {
-                    if (!isActive) {
-                        throw TimeoutException("Timeout out waiting for request to succeed.")
-                    }
-                    try {
-                        val parsed = parser.read(ConsulServiceResponse::class.java)
-                        responses.add(parsed.ServiceAddress)
-                    } catch (exc: JsonException) {
-                        LOGGER.error("Ran into $exc attempting to parse json object from consul")
+                withContext(Dispatchers.IO) {
+                    while (parser.readArray()) {
+                        if (!isActive) {
+                            throw TimeoutException("Timeout out waiting for request to succeed.")
+                        }
+                        try {
+                            val parsed = parser.read(ConsulServiceResponse::class.java)
+                            responses.add(parsed.ServiceAddress)
+                        } catch (exc: JsonException) {
+                            LOGGER.error("Ran into $exc attempting to parse json object from consul")
+                        }
                     }
                 }
 
@@ -148,10 +144,12 @@ class ServiceChecker(consulUri: String, service: String, consulToken: Optional<S
             }
         })
 
-        while (httpClient.dispatcher.runningCalls().contains(call)) {
-            if (!scope.isActive) {
-                call.cancel()
-                throw TimeoutException("Timed out waiting for request to succeed.")
+        withContext(Dispatchers.Unconfined) {
+            while (httpClient.dispatcher.runningCalls().contains(call)) {
+                if (!scope.isActive) {
+                    call.cancel()
+                    throw TimeoutException("Timed out waiting for request to succeed.")
+                }
             }
         }
 
