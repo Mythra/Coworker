@@ -1,6 +1,5 @@
 package io.kungfury.coworker
 
-import io.kungfury.coworker.consul.ServiceChecker
 import io.kungfury.coworker.dbs.ConnectionManager
 import io.kungfury.coworker.dbs.ConnectionType
 import io.kungfury.coworker.dbs.Marginalia.AddMarginalia

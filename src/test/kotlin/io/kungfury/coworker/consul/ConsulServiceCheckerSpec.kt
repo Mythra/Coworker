@@ -17,7 +17,7 @@ import java.io.IOException
 import java.util.Optional
 import java.util.concurrent.TimeUnit
 
-class ServiceCheckerSpec : FunSpec({
+class ConsulServiceCheckerSpec : FunSpec({
     val dispatcher: Dispatcher = object : Dispatcher() {
         @Throws(InterruptedException::class)
         override fun dispatch(request: RecordedRequest): MockResponse {
@@ -41,7 +41,7 @@ class ServiceCheckerSpec : FunSpec({
 
     test("getNewOfflineNodes can parse a full service") {
         val url = server.url("/v1").toUri().toASCIIString()
-        val serviceChecker = ServiceChecker(url, "foobar", Optional.empty(), null)
+        val serviceChecker = ConsulServiceChecker(url, "foobar", Optional.empty(), null)
 
         val removed_one = AwaitValue(serviceChecker.getNewOfflineNodes())
         val removed_two = AwaitValue(serviceChecker.getNewOfflineNodes())
@@ -56,7 +56,7 @@ class ServiceCheckerSpec : FunSpec({
 
     test("getNewOfflineNodes can parse a minimal service") {
         val url = server.url("/v1").toUri().toASCIIString()
-        val serviceChecker = ServiceChecker(url, "foobar-minimal", Optional.empty(), null)
+        val serviceChecker = ConsulServiceChecker(url, "foobar-minimal", Optional.empty(), null)
 
         val removed_one = AwaitValue(serviceChecker.getNewOfflineNodes())
         val removed_two = AwaitValue(serviceChecker.getNewOfflineNodes())
@@ -71,7 +71,7 @@ class ServiceCheckerSpec : FunSpec({
 
     test("getNewOfflineNodes throws when an unexpected code is enouctered") {
         val url = server.url("/v1").toUri().toASCIIString()
-        val serviceChecker = ServiceChecker(url, "foobarbaz", Optional.empty(), null)
+        val serviceChecker = ConsulServiceChecker(url, "foobarbaz", Optional.empty(), null)
 
         shouldThrow<IOException> {
             AwaitValue(serviceChecker.getNewOfflineNodes())
@@ -80,8 +80,8 @@ class ServiceCheckerSpec : FunSpec({
 
     test("getNewOfflineNodes throws an exception on not being able to parse an array") {
         val url = server.url("/v1").toUri().toASCIIString()
-        val serviceChecker = ServiceChecker(url, "foobar-obj", Optional.empty(), null)
-        val svcChecker = ServiceChecker(url, "foobar-nil", Optional.empty(), null)
+        val serviceChecker = ConsulServiceChecker(url, "foobar-obj", Optional.empty(), null)
+        val svcChecker = ConsulServiceChecker(url, "foobar-nil", Optional.empty(), null)
 
         shouldThrow<ArrayIndexOutOfBoundsException> {
             AwaitValue(svcChecker.getNewOfflineNodes())
@@ -93,7 +93,7 @@ class ServiceCheckerSpec : FunSpec({
 
     test("getNewOfflineNodes can timeout") {
         val url = server.url("/v1").toUri().toASCIIString()
-        val serviceChecker = ServiceChecker(url, "foobar-sleep", Optional.empty(), 1L)
+        val serviceChecker = ConsulServiceChecker(url, "foobar-sleep", Optional.empty(), 1L)
 
         shouldThrowAny {
             AwaitValue(serviceChecker.getNewOfflineNodes())
@@ -102,7 +102,7 @@ class ServiceCheckerSpec : FunSpec({
 
     test("it can find the difference between two lists") {
         val url = server.url("/v1").toUri().toASCIIString()
-        val serviceChecker = ServiceChecker(url, "foobar-obj", Optional.empty(), null)
+        val serviceChecker = ConsulServiceChecker(url, "foobar-obj", Optional.empty(), null)
 
         // Test two lists with just added/remove content.
         val listOne = listOf(
