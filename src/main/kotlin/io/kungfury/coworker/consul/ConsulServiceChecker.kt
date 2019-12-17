@@ -2,6 +2,7 @@ package io.kungfury.coworker.consul
 
 import com.jsoniter.JsonIterator
 import com.jsoniter.spi.JsonException
+import io.kungfury.coworker.ServiceChecker
 
 import kotlinx.coroutines.*
 
@@ -22,8 +23,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 /**
  * Implements a service checker for consul.
  */
-class ServiceChecker(consulUri: String, service: String, consulToken: Optional<String>, timeout: Long?) {
-    private val LOGGER = LoggerFactory.getLogger(ServiceChecker::class.java)
+class ConsulServiceChecker(consulUri: String, service: String, consulToken: Optional<String>, timeout: Long?) : ServiceChecker {
+    private val LOGGER = LoggerFactory.getLogger(ConsulServiceChecker::class.java)
 
     private val consulService = service
     private val consulHost: String = "$consulUri/catalog/service/$consulService"
@@ -39,17 +40,17 @@ class ServiceChecker(consulUri: String, service: String, consulToken: Optional<S
     /**
      * Grab the host list of the Service Checker.
      */
-    fun getHostList(): ArrayList<String> = hostList
+    override fun getHostList(): ArrayList<String> = hostList
 
     /**
      * Get the name of the service
      */
-    fun getServiceName(): String = consulService
+    override fun getServiceName(): String = consulService
 
     /**
      * Get a list of the new offline nodes.
      */
-    fun getNewOfflineNodes(): Deferred<List<String>> {
+    override fun getNewOfflineNodes(): Deferred<List<String>> {
         return GlobalScope.async {
             withTimeout(consulTimeoutMs) {
                 CoroutineName("getNewOfflineNodes - $consulService")
