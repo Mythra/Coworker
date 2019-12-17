@@ -7,6 +7,7 @@ import io.kungfury.coworker.dbs.ConnectionManager
 import io.kungfury.coworker.dbs.ConnectionType
 import io.kungfury.coworker.dbs.Marginalia
 import io.kungfury.coworker.dbs.TextSafety
+import io.kungfury.coworker.utils.NetworkUtils
 
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Metrics
@@ -37,6 +38,7 @@ class PgConnectionManager : ConnectionManager {
     private val connectionPool: HikariDataSource
     private val timeoutLong: Long?
     private var metricRegistry: MeterRegistry = Metrics.globalRegistry
+    private var nodeIdentifier: String = NetworkUtils.getLocalHostLANAddress().hostAddress
     private val queryTimer: Timer
 
     /**
@@ -49,12 +51,15 @@ class PgConnectionManager : ConnectionManager {
      * @param metricRegistry
      *  The metric registry to use.
      */
-    constructor(configureSource: Function<HikariConfig, HikariConfig>, timeout: Long?, metricRegistry: MeterRegistry? = null) {
+    constructor(configureSource: Function<HikariConfig, HikariConfig>, timeout: Long?, metricRegistry: MeterRegistry? = null, nodeIdentifier: String? = null) {
         val finalizedConfig = configureSource.apply(HikariConfig())
         connectionPool = HikariDataSource(finalizedConfig)
         timeoutLong = timeout
         if (metricRegistry != null) {
             this.metricRegistry = metricRegistry
+        }
+        if (nodeIdentifier != null) {
+            this.nodeIdentifier = nodeIdentifier
         }
         queryTimer = this.metricRegistry.timer("coworker.pg.query_time", Tags.empty())
     }
@@ -97,12 +102,15 @@ class PgConnectionManager : ConnectionManager {
      * @param meterRegistry
      *  The metric registry to use
      */
-    constructor(configureSource: (toConfigure: HikariConfig) -> HikariConfig, timeout: Long?, meterRegistry: MeterRegistry?) {
+    constructor(configureSource: (toConfigure: HikariConfig) -> HikariConfig, timeout: Long?, meterRegistry: MeterRegistry?, nodeIdentifier: String?) {
         val finalizedConfig = configureSource(HikariConfig())
         connectionPool = HikariDataSource(finalizedConfig)
         timeoutLong = timeout
         if (meterRegistry != null) {
             this.metricRegistry = meterRegistry
+        }
+        if (nodeIdentifier != null) {
+            this.nodeIdentifier = nodeIdentifier
         }
         queryTimer = this.metricRegistry.timer("coworker.pg.query_time", Tags.empty())
     }
@@ -114,6 +122,7 @@ class PgConnectionManager : ConnectionManager {
             timeoutLong
         }
     override val CONNECTION_TYPE: ConnectionType = ConnectionType.POSTGRES
+    override val NODE_IDENTIFIER: String = nodeIdentifier
 
     @Throws(TimeoutCancellationException::class, IOException::class, IllegalStateException::class)
     override fun <T> executeTransaction(query: Function<Connection, T>, commitOnExit: Boolean): T {
