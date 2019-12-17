@@ -30,7 +30,7 @@ instance (since Coworker uses [HikariCP](https://github.com/brettwooldridge/Hika
 to pool connections to the database), and the function should return a configured HikariDataSource
 this allows you to get the configuration for the data source however you wish. The examples below
 will for example fetch a full JDBC_URL from the environment, and pass in `null` for the timeout
-to use the default timeout:
+to use the default timeout, and use the IP address as the node identifier:
 
 ***Kotlin:***
 
@@ -41,7 +41,7 @@ fun getConnectionManager(): PgConnectionManager {
   return PgConnectionManager({ toConfigure ->
     toConfigure.jdbcUrl = System.getenv("JDBC_URL")
     toConfigure
-  }, null, null)
+  }, null, null, null)
 }
 ```
 
@@ -56,7 +56,7 @@ public class Utils {
     return new PgConnectionManager((Function<HikariConfig, HikariConfig>) (hikariConfig -> {
       hikariConfig.setJdbcUrl(System.getenv("JDBC_URL"));
       return hikariConfig;
-    }), null, null);
+    }), null, null, null);
   }
 }
 ```
