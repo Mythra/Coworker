@@ -138,7 +138,7 @@ public class Utils {
 }
 ```
 
-Once you've created your instance of the CoworkerManager all you need to do is call: `start()`
+Once you've created your instance of the CoworkerManager all you need to do is call: `Start()`
 on the instance of the object you created, and that thread will spin up a thread pool starting
 to work through it's queue. ***NOTE: This will hijack the thread that calls start, as well as spinning up
 it's own thread pool.***

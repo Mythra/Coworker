@@ -46,13 +46,10 @@ import kotlin.reflect.full.primaryConstructor
  *  The optional metrics registry to write too, writes to global registry which defaults to null.
  * @param configurationInput
  *  The configuration input.
- * @param nodeIdentifier
- *  The local identity of this host.  Defaults to IPv4 address if null.
  */
 class CoworkerManager(
     private val connectionManager: ConnectionManager,
     threads: Int,
-    private val nodeIdentifier: String?,
     private val serviceChecker: ServiceChecker?,
     registry: MeterRegistry?,
     private val configurationInput: CoworkerConfigurationInput
@@ -85,8 +82,11 @@ class CoworkerManager(
      * Starts this Coworker manager.
      *
      * NOTE: This will hijack the main thread as the "Master Process" queues threads underneath it.
+     *
+     * @param nodeIdentifier
+     *  The local identity of this host.  Defaults to IPv4 address if null.
      */
-    fun Start() {
+    @JvmOverloads fun Start(nodeIdentifier: String? = null) {
         logger.info("Starting Coworker Manager...")
 
         if (nodeIdentifier != null) {

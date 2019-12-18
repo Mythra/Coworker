@@ -81,7 +81,7 @@ nodes work gets rescheduled without any human intervention.
 A user-provided implementation of a service checker may be provided.  It
 should subclass the `ServiceChecker` interface, and return strings which
 represent nodes.  If identifiers other than host IP addresses (the default)
-are used, the `CoworkerManager` must be created with a `nodeIdentifier`.
+are used, the `coworkerManger.Start()` must be provided with a `nodeIdentifier`.
 
 Example:  If Amazon AWS instance-ids are used, which look like 'i-123abd31',
 a SerciceChecker may be written to find all running instances in a specific

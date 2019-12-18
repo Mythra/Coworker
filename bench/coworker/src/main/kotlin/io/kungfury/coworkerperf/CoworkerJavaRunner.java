@@ -19,7 +19,7 @@ public class CoworkerJavaRunner {
             hikariConfig.setJdbcUrl(System.getenv("JDBC_URL"));
             return hikariConfig;
         }), null, null);
-        CoworkerManager manager = new CoworkerManager(cm, threads, null, null, null,
+        CoworkerManager manager = new CoworkerManager(cm, threads, null, null,
             new StaticCoworkerConfigurationInput(
                 Duration.ofMinutes(5),
                 new HashMap<>(),

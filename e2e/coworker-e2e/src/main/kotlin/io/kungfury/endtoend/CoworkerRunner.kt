@@ -58,7 +58,6 @@ fun main(arguments: Array<String>) {
         threads,
         null,
         null,
-        null,
         StaticCoworkerConfigurationInput(Duration.parse("PT5M"), HashMap())
     )
     val queued = runBlocking {

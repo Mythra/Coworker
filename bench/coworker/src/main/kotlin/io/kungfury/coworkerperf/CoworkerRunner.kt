@@ -48,6 +48,6 @@ fun main(arguments: Array<String>) {
         }
     }
     System.out.println("Starting Coworker with: [ $threads ] Threads.")
-    val manager = CoworkerManager(connManager, threads, null, null, null, StaticCoworkerConfigurationInput(Duration.parse("PT5M"), HashMap()))
+    val manager = CoworkerManager(connManager, threads, null, null, StaticCoworkerConfigurationInput(Duration.parse("PT5M"), HashMap()))
     manager.Start()
 }
