@@ -18,7 +18,7 @@ public class CoworkerJavaRunner {
         ConnectionManager cm = new PgConnectionManager((Function<HikariConfig, HikariConfig>) (hikariConfig -> {
             hikariConfig.setJdbcUrl(System.getenv("JDBC_URL"));
             return hikariConfig;
-        }), null, null);
+        }), null, null, null);
         CoworkerManager manager = new CoworkerManager(cm, threads, null, null,
             new StaticCoworkerConfigurationInput(
                 Duration.ofMinutes(5),
