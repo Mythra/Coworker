@@ -120,7 +120,7 @@ import io.kungfury.coworker.StaticCoworkerConfigurationInput
 import io.kungfury.coworker.dbs.postgres.PgConnectionManager
 
 fun createCoworkerInstance(config: StaticCoworkerConfigurationInput, cm: PgconnectionManager): CoworkerManager {
-    return CoworkerManager(cm, 10, null, null, null, config)
+    return CoworkerManager(cm, 10, null, null, config)
 }
 ```
 
@@ -133,7 +133,7 @@ import io.kungfury.coworker.StaticCoworkerConfigurationInput;
 
 public class Utils {
     static CoworkerManager createCoworkerInstance(StaticCoworkerConfigurationInput config, PgConnectionManager cm) {
-        return new CoworkerManager(cm, 10, null, null, null, config);
+        return new CoworkerManager(cm, 10, null, null, config);
     }
 }
 ```
