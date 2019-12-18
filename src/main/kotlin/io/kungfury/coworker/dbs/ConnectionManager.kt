@@ -23,13 +23,6 @@ interface ConnectionManager {
     val CONNECTION_TYPE: ConnectionType
 
     /**
-     * The node identifier used in tables to indicate "this node".  Could be an
-     * IP address, AWS instance, or randomly generated string.  This is used
-     * to mark claimed work, and should be something that will not be reused.
-     */
-    val NODE_IDENTIFIER: String
-
-    /**
      * A wrapper around executeTransaction(query, commitOnExit) to provide an easier java interface.
      *
      * @param query

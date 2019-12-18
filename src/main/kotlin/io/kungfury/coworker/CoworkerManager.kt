@@ -46,10 +46,13 @@ import kotlin.reflect.full.primaryConstructor
  *  The optional metrics registry to write too, writes to global registry which defaults to null.
  * @param configurationInput
  *  The configuration input.
+ * @param nodeIdentifier
+ *  The local identity of this host.  Defaults to IPv4 address if null.
  */
 class CoworkerManager(
     private val connectionManager: ConnectionManager,
     threads: Int,
+    private val nodeIdentifier: String?,
     private val serviceChecker: ServiceChecker?,
     registry: MeterRegistry?,
     private val configurationInput: CoworkerConfigurationInput
@@ -86,6 +89,10 @@ class CoworkerManager(
     fun Start() {
         logger.info("Starting Coworker Manager...")
 
+        if (nodeIdentifier != null) {
+            NodeIdentifier.id = nodeIdentifier
+        }
+
         Runtime.getRuntime().addShutdownHook(Thread {
             cleanupRuns.increment()
             runBlocking { garbageHeap.Cleanup(connectionManager) }
@@ -94,7 +101,7 @@ class CoworkerManager(
         // Cleanup any work left behind by restart.
         runBlocking {
             withContext(Dispatchers.IO) {
-                ReleaseToPoolForHosts(listOf(connectionManager.NODE_IDENTIFIER))
+                ReleaseToPoolForHosts(listOf(NodeIdentifier.id))
             }
         }
 
@@ -411,7 +418,7 @@ class CoworkerManager(
                             "SELECT work_unique_name, stage, state, strand, priority, COALESCE(run_at, created_at) AS queued_at FROM public.delayed_work JOIN stamp_work USING (id)"
                     ))
                     statement.setLong(1, id)
-                    statement.setString(2, connectionManager.NODE_IDENTIFIER)
+                    statement.setString(2, NodeIdentifier.id)
                     val rs = statement.executeQuery()
 
                     if (rs == null) {
@@ -547,7 +554,7 @@ class CoworkerManager(
                         "SELECT id FROM public.delayed_work WHERE id = ? AND locked_by = ? LIMIT 1"
                     ))
                     statement.setLong(1, id)
-                    statement.setString(2, connectionManager.NODE_IDENTIFIER)
+                    statement.setString(2, NodeIdentifier.id)
                     val rs = statement.executeQuery()
 
                     rs.next()
@@ -589,7 +596,7 @@ class CoworkerManager(
                     createFailed.setString(3, workName)
                     createFailed.setString(4, failureReason)
                     createFailed.setString(5, "")
-                    createFailed.setString(6, connectionManager.NODE_IDENTIFIER)
+                    createFailed.setString(6, NodeIdentifier.id)
                     createFailed.execute()
                 }, true)
             }

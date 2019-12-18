@@ -149,7 +149,7 @@ interface DelayedKotlinWork {
                     createFailed.setString(3, workName)
                     createFailed.setString(4, failedMsg)
                     createFailed.setString(5, this.serializeState())
-                    createFailed.setString(6, connectionManager.NODE_IDENTIFIER)
+                    createFailed.setString(6, NodeIdentifier.id)
                     createFailed.execute()
 
                     true

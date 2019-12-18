@@ -30,7 +30,7 @@ instance (since Coworker uses [HikariCP](https://github.com/brettwooldridge/Hika
 to pool connections to the database), and the function should return a configured HikariDataSource
 this allows you to get the configuration for the data source however you wish. The examples below
 will for example fetch a full JDBC_URL from the environment, and pass in `null` for the timeout
-to use the default timeout, and use the IP address as the node identifier:
+to use the default timeout:
 
 ***Kotlin:***
 
@@ -41,7 +41,7 @@ fun getConnectionManager(): PgConnectionManager {
   return PgConnectionManager({ toConfigure ->
     toConfigure.jdbcUrl = System.getenv("JDBC_URL")
     toConfigure
-  }, null, null, null)
+  }, null, null)
 }
 ```
 
@@ -56,7 +56,7 @@ public class Utils {
     return new PgConnectionManager((Function<HikariConfig, HikariConfig>) (hikariConfig -> {
       hikariConfig.setJdbcUrl(System.getenv("JDBC_URL"));
       return hikariConfig;
-    }), null, null, null);
+    }), null, null);
   }
 }
 ```
@@ -110,7 +110,7 @@ public class Utils {
 
 Once you've gone ahead and creating a ConnectionManager + a Configuration Object, you're finally
 ready to create an Instance of Coworker. Remember this part of the documentation does not cover using
-consul for node recovery, so we'll pass in: `null` for our ServiceChecker, we'll also pass in `null` for our MetricRegistry:
+consul for node recovery, so we'll pass in: `null` for our `nodeIdentifier` and `ServiceChecker`, we'll also pass in `null` for our MetricRegistry:
 
 ***Kotlin:***
 
@@ -120,7 +120,7 @@ import io.kungfury.coworker.StaticCoworkerConfigurationInput
 import io.kungfury.coworker.dbs.postgres.PgConnectionManager
 
 fun createCoworkerInstance(config: StaticCoworkerConfigurationInput, cm: PgconnectionManager): CoworkerManager {
-    return CoworkerManager(cm, 10, null, null, config)
+    return CoworkerManager(cm, 10, null, null, null, config)
 }
 ```
 
@@ -133,7 +133,7 @@ import io.kungfury.coworker.StaticCoworkerConfigurationInput;
 
 public class Utils {
     static CoworkerManager createCoworkerInstance(StaticCoworkerConfigurationInput config, PgConnectionManager cm) {
-        return new CoworkerManager(cm, 10, null, null, config);
+        return new CoworkerManager(cm, 10, null, null, null, config);
     }
 }
 ```
@@ -142,3 +142,5 @@ Once you've created your instance of the CoworkerManager all you need to do is c
 on the instance of the object you created, and that thread will spin up a thread pool starting
 to work through it's queue. ***NOTE: This will hijack the thread that calls start, as well as spinning up
 it's own thread pool.***
+
+Please see the documentation for `ServiceChecker` if you are using one, for how and when to set a `nodeIdentifier`.

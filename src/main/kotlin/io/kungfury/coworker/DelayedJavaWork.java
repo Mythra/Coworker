@@ -204,7 +204,7 @@ public interface DelayedJavaWork {
                         createFailed.setString(3, workName);
                         createFailed.setString(4, failedMsg);
                         createFailed.setString(5, this.getSerializedState());
-                        createFailed.setString(6, connectionManager.getNODE_IDENTIFIER());
+                        createFailed.setString(6, NodeIdentifier.getId());
                         createFailed.execute();
 
                         return true;

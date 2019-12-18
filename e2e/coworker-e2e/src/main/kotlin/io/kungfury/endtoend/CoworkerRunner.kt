@@ -31,7 +31,7 @@ fun main(arguments: Array<String>) {
     val connManager = PgConnectionManager({ toConfigure ->
         toConfigure.jdbcUrl = System.getenv("JDBC_URL")
         toConfigure
-    }, null, null, null)
+    }, null, null)
 
     WorkInserter.InsertWork(connManager, "io.kungfury.endtoend.EmptyJob", "")
 
@@ -56,6 +56,7 @@ fun main(arguments: Array<String>) {
     val manager = CoworkerManager(
         connManager,
         threads,
+        null,
         null,
         null,
         StaticCoworkerConfigurationInput(Duration.parse("PT5M"), HashMap())
