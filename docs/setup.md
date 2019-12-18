@@ -110,7 +110,7 @@ public class Utils {
 
 Once you've gone ahead and creating a ConnectionManager + a Configuration Object, you're finally
 ready to create an Instance of Coworker. Remember this part of the documentation does not cover using
-consul for node recovery, so we'll pass in: `null` for our `nodeIdentifier` and `ServiceChecker`, we'll also pass in `null` for our MetricRegistry:
+consul for node recovery, so we'll pass in: `null` for our `ServiceChecker`, we'll also pass in `null` for our MetricRegistry:
 
 ***Kotlin:***
 
