@@ -3,7 +3,6 @@ package io.kungfury.coworker
 import io.kungfury.coworker.dbs.ConnectionManager
 import io.kungfury.coworker.dbs.ConnectionType
 import io.kungfury.coworker.dbs.Marginalia.AddMarginalia
-import io.kungfury.coworker.utils.NetworkUtils
 
 import kotlinx.coroutines.Job
 
@@ -150,7 +149,7 @@ interface DelayedKotlinWork {
                     createFailed.setString(3, workName)
                     createFailed.setString(4, failedMsg)
                     createFailed.setString(5, this.serializeState())
-                    createFailed.setString(6, NetworkUtils.getLocalHostLANAddress().hostAddress)
+                    createFailed.setString(6, NodeIdentifier.id)
                     createFailed.execute()
 
                     true
