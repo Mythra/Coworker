@@ -101,7 +101,7 @@ import java.util.HashMap;
 
 public class Utils {
     static StaticCoworkerConfigurationInput getStaticConfiguration() {
-        return new StaticCoworkerConfigurationInput(Duration.parse("PT5M"), new HashMap<>(), 3, 1000, Duration.ofSeconds(30));
+        return new StaticCoworkerConfigurationInput(Duration.parse("PT5M"), new HashMap<>(), 3, 1000, Duration.ofSeconds(30), Duration.ofMillis(100L));
     }
 }
 ```

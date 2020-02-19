@@ -37,4 +37,10 @@ interface CoworkerConfigurationInput {
      *  The duration of garbage clean size.
      */
     fun getCleanDuration(): Duration
+
+    /**
+     * Get the total amount of time to sleep when no jobs have been found to prevent CPU
+     * busy spins.
+     */
+    fun getCheckSleepDuration(): Duration
 }

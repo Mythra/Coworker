@@ -25,7 +25,8 @@ public class CoworkerJavaRunner {
                 new HashMap<>(),
                 (short) 3,
                 1000,
-                Duration.ofSeconds(30L)
+                Duration.ofSeconds(30L),
+                Duration.ofMillis(100L)
             )
         );
         manager.Start();

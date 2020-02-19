@@ -123,11 +123,13 @@ class CoworkerManager(
                         }
                     }
                 }
-                Thread.sleep(1000)
+                Thread.sleep(configurationInput.getCheckSleepDuration().toMillis())
             }
         }
 
         while (true) {
+            Thread.sleep(configurationInput.getCheckSleepDuration().toMillis())
+
             CleanupCompletedWork()
             if (futures.size >= nThreads) {
                 continue

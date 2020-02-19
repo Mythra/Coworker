@@ -11,7 +11,8 @@ class StaticCoworkerConfigurationInput(
     nstrand: Map<String, Int>,
     private val failureLimit: Short = 3,
     private val garbageHeapSize: Int = 1000,
-    private val cleanupDuration: Duration = Duration.ofSeconds(30)
+    private val cleanupDuration: Duration = Duration.ofSeconds(30),
+    private val checkSleep: Duration = Duration.ofMillis(100)
 ) : CoworkerConfigurationInput {
     private val nstrandMap: Map<Pair<String, Regex>, Int> = nstrand.map { entry ->
         Pair(entry.key, Regex.fromLiteral(entry.key)) to entry.value
@@ -22,4 +23,5 @@ class StaticCoworkerConfigurationInput(
     override fun getFailureLimit(): Short = failureLimit
     override fun getGarbageMaxSize(): Int = garbageHeapSize
     override fun getCleanDuration(): Duration = cleanupDuration
+    override fun getCheckSleepDuration(): Duration = checkSleep
 }
