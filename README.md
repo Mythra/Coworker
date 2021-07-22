@@ -1,3 +1,7 @@
+# ARCHIVAL NOTICE#
+
+Coworker was originally open-sourced from an internal project to showcase the ideas we were testing that worked so well for us. It's fallen significantly out of date, and because of when it was written documentation on Kotlin Coroutines weren't great. As a result I've noticed a few bugs/inneffecienes that exist. I plan a rewrite of these at some point, but haven't really had the time as of yet. If you have any questions though feel free to reach out, and ask about how the SQL/Code works (the SQL is the same as internal and can be trusted to be the most effecient).
+
 # Coworker #
 
 Coworker is a delayed work runner built for JVM Based languages, written in
